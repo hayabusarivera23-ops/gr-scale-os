@@ -7,6 +7,7 @@ import {
   Edit3, Plus, CheckCircle, Circle, Copy, Send, Zap, Globe,
 } from 'lucide-react'
 import { cn, formatCurrency, formatDate, getStatusColor, getLeadScoreColor } from '@/lib/utils'
+import { demoForIndustry } from '@/lib/demos'
 
 // ─── Seed data ───────────────────────────────────────────────────────────────
 // Includes audit fields so the Outreach tab has real data to work with.
@@ -72,18 +73,7 @@ const STATUS_COLORS: Record<OutreachStatus, string> = {
   'Meeting Scheduled': 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
 }
 
-// ─── Demo library ─────────────────────────────────────────────────────────────
-
-const DEMO_MAP: Record<string, { label: string; url: string; description: string }> = {
-  'HVAC':             { label: 'HVAC Demo Site',        url: 'https://acorlandohvac.com', description: 'Mobile-first HVAC site: click-to-call, quote form, service pages, trust badges.' },
-  'Barber':           { label: 'Barber Demo Site',      url: '#barber-demo',              description: 'Booking-focused barbershop site with gallery, services, and appointment button.' },
-  'Plumbing':         { label: 'Plumbing Demo Site',    url: '#plumbing-demo',            description: '24/7 emergency-focused plumbing site with urgency CTA and phone in header.' },
-  'Landscaping':      { label: 'Landscaping Demo Site', url: '#landscaping-demo',         description: 'Photo-heavy landscaping site with before/after gallery and quote form.' },
-  'Roofing':          { label: 'Roofing Demo Site',     url: '#roofing-demo',             description: 'Trust-signal-heavy roofing site with licensing, reviews, and free inspection CTA.' },
-  'Pressure Washing': { label: 'Pressure Washing Demo', url: '#pressure-demo',            description: 'Clean, fast-loading pressure washing site with before/after and service area map.' },
-  'Restaurant':       { label: 'Restaurant Demo Site',  url: '#restaurant-demo',          description: 'Menu-forward restaurant site with online ordering and hours.' },
-  'Auto Detailing':   { label: 'Auto Detailing Demo',   url: '#auto-demo',                description: 'Package-focused auto detailing site with booking and gallery.' },
-}
+// ─── Demo library — REAL deployed Demo Factory URLs (src/lib/demos.ts) ───────
 
 type DemoStatus = 'Not Sent' | 'Sent' | 'Viewed' | 'Discussed'
 
@@ -209,7 +199,12 @@ export default function LeadDetailPage({ params: _params }: { params: Promise<{ 
   const [demoAttachedAt, setDemoAttachedAt] = useState<string | null>(null)
 
   const outreachItems = useMemo(() => generateOutreach(LEAD), [])
-  const recommendedDemo = DEMO_MAP[LEAD.industry] ?? null
+  const matchedDemo = demoForIndustry(LEAD.industry)
+  const recommendedDemo = {
+    label: `${matchedDemo.industry} Demo Site (Live)`,
+    url: matchedDemo.url,
+    description: matchedDemo.useCase,
+  }
 
   function toggleTask(id: string) {
     setTasks(t => t.map(task => task.id === id ? { ...task, completed: !task.completed } : task))

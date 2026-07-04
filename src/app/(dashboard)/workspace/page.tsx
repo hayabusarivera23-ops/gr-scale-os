@@ -8,6 +8,8 @@ import {
   Globe, MessageSquare, Mail, Mic, Video, ChevronRight
 } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
+import { demoForIndustry } from '@/lib/demos'
+import PageGuide from '@/components/shared/PageGuide'
 
 // ─── Lead data ────────────────────────────────────────────────────────────────
 
@@ -87,12 +89,10 @@ const LEADS: WorkspaceLead[] = [
   },
 ]
 
-// ─── Demo map ─────────────────────────────────────────────────────────────────
+// ─── Demo map — real deployed Demo Factory (src/lib/demos.ts) ────────────────
+// Every industry now auto-matches its LIVE demo at gr-scale-demos.vercel.app.
 
-const DEMO_URL: Record<string, { url: string; live: boolean }> = {
-  'HVAC':   { url: 'https://acorlandohvac.com',   live: true  },
-  'Barber': { url: 'https://lexthebarber.com',     live: true  },
-}
+const demoFor = (industry: string) => demoForIndustry(industry)
 
 // ─── Message generation ───────────────────────────────────────────────────────
 
@@ -108,8 +108,8 @@ function generateMessages(lead: WorkspaceLead): Messages {
   const { business_name, city, website_score, outreach_angle, audit_weaknesses, phone, industry } = lead
   const w1 = audit_weaknesses[0] ?? 'several website issues'
   const w2 = audit_weaknesses[1] ?? 'missing conversion elements'
-  const demo = DEMO_URL[industry]
-  const demoLine = demo?.live ? `\n\nHere's an example of what I built for another ${industry} company: ${demo.url}` : ''
+  const demo = demoFor(industry)
+  const demoLine = `\n\nHere's a live example of what I build for ${industry.toLowerCase()} companies: ${demo.url}`
   const scoreLine = website_score !== null ? ` It scored ${website_score}/100.` : ''
 
   return {
@@ -403,9 +403,15 @@ export default function WorkspacePage() {
       <div className="page-header">
         <div>
           <h2 className="page-title">Outreach Workspace</h2>
-          <p className="text-sm text-zinc-600 mt-0.5">Select a lead. Get every asset you need to make contact.</p>
+          <p className="text-sm text-zinc-600 mt-0.5">Select a lead. Every asset includes the matching live demo automatically.</p>
         </div>
       </div>
+      <PageGuide
+        what="Pick a lead and get ready-to-send outreach: cold email, SMS, voicemail script, Loom script — each with the lead's matching live demo link already inside."
+        why="Personalized outreach with a visual demo gets replies. Generic blasts get ignored."
+        next="Copy the SMS or email, send it from your phone, then log the touch and set a follow-up date."
+        money="10 touches a day = 2-3 conversations a week = your first $99-599/mo close. This page IS the sales engine."
+      />
       <Suspense fallback={<div className="text-sm text-zinc-600">Loading workspace...</div>}>
         <WorkspaceInner />
       </Suspense>

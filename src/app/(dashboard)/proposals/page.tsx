@@ -15,20 +15,27 @@ import { FileText, Plus, Copy, Sparkles, Check } from 'lucide-react'
 import { cn, formatCurrency, formatDate, getStatusColor } from '@/lib/utils'
 import { PACKAGES, PACKAGE_LIST, recommendPackage, generateProposal, type PackageId } from '@/lib/packages'
 import { useOS, type OSProposal } from '@/lib/store'
+import { LIVE_DEMOS, demoForIndustry } from '@/lib/demos'
+import PageGuide from '@/components/shared/PageGuide'
 
-const OUTREACH_TEMPLATES = [
-  { name: 'Cold Email', subject: 'Wrong phone number on [Business Name]\'s website', body: `Hey [First Name],\n\nI was checking out [Business Name] online and noticed your site [SPECIFIC FLAW — one sentence].\n\nThat's likely costing you calls — most homeowners pick whichever AC company they can tap-to-call in 5 seconds.\n\nI build fast, mobile-first websites for Florida HVAC companies. Here's one I built: meloair-v2.vercel.app\n\nWant me to send a free 1-minute video audit of your site? No strings.\n\n— Gio, GR Scale\n[phone]` },
-  { name: 'Cold Call Script', subject: 'Phone script — Tier A leads', body: `"Hey, is this the owner of [Business Name]? ... My name's Gio — I'll be 20 seconds, I promise.\nI build websites for HVAC companies here in Florida, and I was on your site yesterday — did you know it still shows [SPECIFIC FLAW]?\nThat means people trying to call you are hitting a dead number. I made a quick 1-minute video showing exactly what's wrong and how I'd fix it — can I text it to you?"` },
-  { name: 'Follow-Up Day 1', subject: 'Text after call', body: `Hey [Name] — did my video come through okay?\nHere's the link again: [LOOM LINK]\nAnd the example site: meloair-v2.vercel.app\n— Gio` },
-  { name: 'Follow-Up Day 3', subject: 'Value touch', body: `Hey [Name] — quick update on [Business Name]: also noticed your Google listing is missing service photos (only 2 listed). That's costing you clicks too. Easy fix — I can handle it same week as the site. Worth a 10-min call?` },
-  { name: 'Closing Text', subject: 'Close', body: `Hey [Name] — ready to get [Business Name]'s site live? $[SETUP] to build (half now, half at launch), then $[MONTHLY]/mo covers hosting, updates, and keeping it working for you. I can send the payment link in 2 minutes. Want to go?` },
-  { name: 'Age Objection', subject: 'Objection handler', body: `"16. I built meloair-v2.vercel.app — open it on your phone right now and judge the work, not the age. You're not paying for my age, you're paying for a site that makes your phone ring."` },
-]
+/** Outreach scripts with the matching LIVE demo URL injected per industry. */
+function buildOutreachTemplates(demoUrl: string, industry: string) {
+  const shortUrl = demoUrl.replace('https://', '')
+  return [
+    { name: 'Cold Email', subject: 'Noticed something on [Business Name]\'s website', body: `Hey [First Name],\n\nI was checking out [Business Name] online and noticed your site [SPECIFIC FLAW — one sentence].\n\nThat's likely costing you calls — most customers pick whichever ${industry.toLowerCase()} company they can tap-to-call in 5 seconds.\n\nI build fast, mobile-first websites for ${industry.toLowerCase()} companies. Here's a live example: ${shortUrl}\n\nWant me to send a free 1-minute video audit of your site? No strings.\n\n— Gio, GR Scale\n[phone]` },
+    { name: 'Cold Call Script', subject: 'Phone script — Tier A leads', body: `"Hey, is this the owner of [Business Name]? ... My name's Gio — I'll be 20 seconds, I promise.\nI build websites for ${industry.toLowerCase()} companies here in Florida, and I was on your site yesterday — did you know it still shows [SPECIFIC FLAW]?\nI made a quick example of what a modern ${industry.toLowerCase()} site looks like — can I text you the link?" → then text: ${shortUrl}` },
+    { name: 'Follow-Up Day 1', subject: 'Text after call', body: `Hey [Name] — did my link come through okay?\nHere it is again: ${shortUrl}\nOpen it on your phone — that's what your customers would see.\n— Gio` },
+    { name: 'Follow-Up Day 3', subject: 'Value touch', body: `Hey [Name] — quick update on [Business Name]: also noticed your Google listing is missing service photos (only 2 listed). That's costing you clicks too. Easy fix — I can handle it same week as the site. Worth a 10-min call?` },
+    { name: 'Closing Text', subject: 'Close', body: `Hey [Name] — ready to get [Business Name]'s site live? $[SETUP] to build (half now, half at launch), then $[MONTHLY]/mo covers hosting, updates, and keeping it working for you. I can send the payment link in 2 minutes. Want to go?` },
+    { name: 'Age Objection', subject: 'Objection handler', body: `"16. Open ${shortUrl} on your phone right now and judge the work, not the age. You're not paying for my age, you're paying for a site that makes your phone ring."` },
+  ]
+}
 
 export default function ProposalsPage() {
   const { data, ready, addProposal } = useOS()
   const [tab, setTab] = useState<'builder' | 'proposals' | 'packages' | 'templates'>('builder')
   const [copied, setCopied] = useState<string | null>(null)
+  const [scriptDemoSlug, setScriptDemoSlug] = useState('hvac')
 
   // Builder state
   const [leadId, setLeadId] = useState<string>('')
@@ -67,7 +74,8 @@ export default function ProposalsPage() {
       packageId: chosenPkg,
       setupFee: effectiveSetup,
       specificWeakness: lead.notes ? lead.notes.split('.')[0].toLowerCase() + '.' : undefined,
-      demoUrl: 'https://meloair-v2.vercel.app',
+      // Real live demo matched to the lead's industry (Demo Factory)
+      demoUrl: demoForIndustry(lead.industry).url,
     })
     setGenerated(body)
   }
@@ -102,6 +110,13 @@ export default function ProposalsPage() {
         <button className="btn-primary" onClick={() => setTab('builder')}><Plus className="h-4 w-4" /> New Proposal</button>
       </div>
 
+      <PageGuide
+        what="Build client-ready proposals in 60 seconds: pick the lead, confirm the recommended package, generate, copy, send."
+        why="Deals die waiting on proposals. Same-day proposals close at a much higher rate — speed is your advantage over every slow agency."
+        next="After sending, mark it 'Sent' so the dashboard reminds you to chase it in 2 days."
+        money="Every sent proposal is a concrete $99-599/mo ask. No proposal, no close."
+      />
+
       <div className="border-b border-zinc-800">
         <div className="flex gap-0">
           {(['builder', 'proposals', 'packages', 'templates'] as const).map(t => (
@@ -128,6 +143,15 @@ export default function ProposalsPage() {
                 ))}
               </select>
               {lead && <p className="text-xs text-zinc-500 leading-relaxed">{lead.notes}</p>}
+              {lead && (
+                <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/20 px-3 py-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 mb-0.5">Demo included in proposal</p>
+                  <a href={demoForIndustry(lead.industry).url} target="_blank" rel="noopener noreferrer"
+                    className="text-xs text-emerald-400 hover:underline break-all">
+                    {demoForIndustry(lead.industry).url}
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Step 2: engine recommendation */}
@@ -268,10 +292,22 @@ export default function ProposalsPage() {
         </div>
       )}
 
-      {/* ─── OUTREACH SCRIPTS ─────────────────────────────────────────────── */}
+      {/* ─── OUTREACH SCRIPTS (matching live demo URL auto-injected) ─────── */}
       {tab === 'templates' && (
         <div className="space-y-3">
-          {OUTREACH_TEMPLATES.map(t => (
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 flex flex-wrap items-center gap-3">
+            <p className="text-xs font-semibold text-zinc-400">Lead&apos;s industry:</p>
+            <select className="input-base w-56" value={scriptDemoSlug} onChange={e => setScriptDemoSlug(e.target.value)}>
+              {LIVE_DEMOS.map(d => <option key={d.slug} value={d.slug}>{d.industry}</option>)}
+            </select>
+            <p className="text-xs text-zinc-600">
+              Scripts below auto-include the live {LIVE_DEMOS.find(d => d.slug === scriptDemoSlug)?.industry} demo link.
+            </p>
+          </div>
+          {buildOutreachTemplates(
+            LIVE_DEMOS.find(d => d.slug === scriptDemoSlug)?.url ?? LIVE_DEMOS[0].url,
+            LIVE_DEMOS.find(d => d.slug === scriptDemoSlug)?.industry ?? 'HVAC',
+          ).map(t => (
             <div key={t.name} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
               <div className="flex items-center justify-between mb-2">
                 <div>

@@ -20,6 +20,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { toStage, closestToPaying, revenueOpportunity, buildWorkQueue } from '@/lib/workflow'
 import { useOS } from '@/lib/store'
 import { PACKAGES } from '@/lib/packages'
+import { DEMOS_LIVE_COUNT, highestValueDemo } from '@/lib/demos'
 
 // ─── Metric card ──────────────────────────────────────────────────────────────
 
@@ -136,6 +137,26 @@ export default function DashboardPage() {
         <Metric label="New Leads" value={String(metrics.newLeads)} sub="untouched" icon={Users} color="text-sky-400" href="/leads" />
         <Metric label="Follow-Ups Due" value={String(metrics.followUpsDue)} sub="today" icon={Phone} color={metrics.followUpsDue > 0 ? 'text-amber-400' : 'text-zinc-400'} href="/pipeline" />
         <Metric label="Proposals Waiting" value={String(metrics.proposalsWaiting)} sub="chase these" icon={FileText} color={metrics.proposalsWaiting > 0 ? 'text-red-400' : 'text-zinc-400'} href="/proposals" />
+      </div>
+
+      {/* Demo Factory status — real deployed demos */}
+      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black tracking-widest text-emerald-500 uppercase mb-1">Demo Factory</p>
+            <p className="text-sm text-zinc-200">
+              <span className="font-bold text-emerald-400">{DEMOS_LIVE_COUNT} demos live</span>
+              <span className="text-zinc-500"> · 0 needing improvement · </span>
+              <span className="text-zinc-400">today&apos;s highest-value demo: </span>
+              <a href={highestValueDemo().url} target="_blank" rel="noopener noreferrer" className="font-bold text-sky-400 hover:underline">
+                {highestValueDemo().industry}
+              </a>
+            </p>
+          </div>
+          <Link href="/demos" className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition">
+            Open Demo Library <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
       {/* Highest ROI Task */}
