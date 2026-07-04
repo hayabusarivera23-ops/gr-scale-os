@@ -130,10 +130,16 @@ export default function DashboardPage() {
             </div>
             <p className="text-sm font-bold text-zinc-100">{data.settings.todays_mission}</p>
           </div>
-          <Link href="/today"
-            className="inline-flex items-center gap-2.5 rounded-xl bg-sky-500 px-8 py-4 text-base font-black text-white shadow-lg shadow-sky-500/30 hover:bg-sky-400 hover:-translate-y-0.5 transition-all">
-            <Zap className="h-5 w-5" /> START WORK
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/today"
+              className="inline-flex items-center gap-2.5 rounded-xl bg-sky-500 px-8 py-4 text-base font-black text-white shadow-lg shadow-sky-500/30 hover:bg-sky-400 hover:-translate-y-0.5 transition-all">
+              <Zap className="h-5 w-5" /> START WORK
+            </Link>
+            <Link href="/approve"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4 text-sm font-bold text-emerald-400 hover:bg-emerald-500/20 transition">
+              Approval Queue
+            </Link>
+          </div>
         </div>
       </div>
 
