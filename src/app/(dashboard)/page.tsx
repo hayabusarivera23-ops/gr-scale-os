@@ -120,13 +120,21 @@ export default function DashboardPage() {
         <p className="text-sm text-zinc-600 mt-0.5">{today} · Here&apos;s what needs your attention.</p>
       </div>
 
-      {/* Today's Mission */}
+      {/* Today's Mission + START WORK */}
       <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 px-5 py-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Flag className="h-4 w-4 text-sky-400" />
-          <p className="text-[10px] font-black tracking-widest text-sky-500 uppercase">Today&apos;s Mission</p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Flag className="h-4 w-4 text-sky-400" />
+              <p className="text-[10px] font-black tracking-widest text-sky-500 uppercase">Today&apos;s Mission</p>
+            </div>
+            <p className="text-sm font-bold text-zinc-100">{data.settings.todays_mission}</p>
+          </div>
+          <Link href="/today"
+            className="inline-flex items-center gap-2.5 rounded-xl bg-sky-500 px-8 py-4 text-base font-black text-white shadow-lg shadow-sky-500/30 hover:bg-sky-400 hover:-translate-y-0.5 transition-all">
+            <Zap className="h-5 w-5" /> START WORK
+          </Link>
         </div>
-        <p className="text-sm font-bold text-zinc-100">{data.settings.todays_mission}</p>
       </div>
 
       {/* Phase 1 metrics strip */}
