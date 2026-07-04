@@ -210,7 +210,7 @@ function WorkspaceInner() {
 
   const lead     = LEADS.find(l => l.id === selectedId) ?? LEADS[0]
   const messages = useMemo(() => generateMessages(lead), [lead])
-  const demo     = DEMO_URL[lead.industry] ?? null
+  const demo     = demoFor(lead.industry)
 
   function copy(text: string, id: string) {
     navigator.clipboard.writeText(text)
@@ -314,31 +314,22 @@ function WorkspaceInner() {
             <Globe className="h-4 w-4 text-sky-400" />
             <span className="text-sm font-semibold text-zinc-200">Recommended Demo</span>
           </div>
-          {demo ? (
-            <div className="flex items-center gap-3">
-              {demo.live ? (
-                <>
-                  <a href={demo.url} target="_blank" rel="noreferrer"
-                    className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 transition">
-                    <ExternalLink className="h-3.5 w-3.5" /> Open Demo
-                  </a>
-                  <button onClick={() => copy(demo.url, 'demo-url')}
-                    className={cn('flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition',
-                      copied === 'demo-url'
-                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                        : 'bg-zinc-800/60 border-zinc-700 text-zinc-400 hover:text-zinc-200')}>
-                    <Copy className="h-3.5 w-3.5" />
-                    {copied === 'demo-url' ? 'Copied!' : 'Copy URL'}
-                  </button>
-                  <span className="text-xs text-zinc-600">{demo.url}</span>
-                </>
-              ) : (
-                <p className="text-xs text-zinc-600">No {lead.industry} demo built yet. <Link href="/demos" className="text-amber-400 hover:underline">Build it →</Link></p>
-              )}
-            </div>
-          ) : (
-            <p className="text-xs text-zinc-600">No demo for {lead.industry} niche yet. <Link href="/demos" className="text-amber-400 hover:underline">Build it →</Link></p>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="badge bg-emerald-500/15 text-emerald-400 text-[10px]">● Live · {demo.industry}</span>
+            <a href={demo.url} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 transition">
+              <ExternalLink className="h-3.5 w-3.5" /> Open Demo
+            </a>
+            <button onClick={() => copy(demo.url, 'demo-url')}
+              className={cn('flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition',
+                copied === 'demo-url'
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                  : 'bg-zinc-800/60 border-zinc-700 text-zinc-400 hover:text-zinc-200')}>
+              <Copy className="h-3.5 w-3.5" />
+              {copied === 'demo-url' ? 'Copied!' : 'Copy URL'}
+            </button>
+            <span className="text-xs text-zinc-600">{demo.url}</span>
+          </div>
         </div>
 
         {/* Outreach messages */}
