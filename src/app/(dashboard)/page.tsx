@@ -11,6 +11,7 @@
  * store (src/lib/store.ts) instead of hardcoded data.
  */
 
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   Phone, ChevronRight, DollarSign, Target, TrendingUp,
@@ -86,6 +87,42 @@ function QuestionCard({
   )
 }
 
+// ─── Claude Command Center ────────────────────────────────────────────────────
+// Zero-cost automation: each button copies a ready-to-paste command for Claude
+// (in the Claude desktop app / Cowork). Claude executes: finds leads, audits
+// sites, preps outreach. No API keys, no monthly fees.
+
+function ClaudeCommands() {
+  const [copied, setCopied] = useState<string | null>(null)
+  const commands = [
+    { id: 'find',    label: '🔎 Find Leads',      cmd: 'Act as GR Scale\'s Growth Operator. Find me 10 new roofing/plumbing/HVAC leads in Florida (family-owned, 4.5★+, weak or outdated websites). Audit each site, score the opportunity, recommend the package and demo, and write personalized SMS + email + call scripts for each. Load everything into my outreach queue doc.' },
+    { id: 'audit',   label: '🧪 Audit a Website', cmd: 'Act as GR Scale\'s website auditor. Audit this business website: [PASTE URL]. Give me: mobile/speed/trust/CTA/SEO findings, an opportunity score, the recommended GR Scale package, the matching demo link, and a personalized outreach message referencing the #1 specific flaw.' },
+    { id: 'close',   label: '🤝 Help Me Close',   cmd: 'A lead replied to my outreach. Here\'s what they said: [PASTE REPLY]. Act as my sales coach: write my exact response, anticipate their objections, and tell me when to send the proposal and Stripe link.' },
+  ]
+  function copy(cmd: string, id: string) {
+    navigator.clipboard.writeText(cmd)
+    setCopied(id)
+    setTimeout(() => setCopied(null), 2500)
+  }
+  return (
+    <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 px-5 py-4">
+      <p className="text-[10px] font-black tracking-widest text-violet-400 uppercase mb-1">Claude Command Center</p>
+      <p className="text-xs text-zinc-500 mb-3">Press a button → command copies → paste it to Claude in the Claude app. Claude does the work. $0 extra cost.</p>
+      <div className="flex flex-wrap gap-2">
+        {commands.map(c => (
+          <button key={c.id} onClick={() => copy(c.cmd, c.id)}
+            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-bold transition ${
+              copied === c.id
+                ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
+                : 'border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20'}`}>
+            {copied === c.id ? '✓ Copied — paste to Claude!' : c.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -152,6 +189,9 @@ export default function DashboardPage() {
         <Metric label="Follow-Ups Due" value={String(metrics.followUpsDue)} sub="today" icon={Phone} color={metrics.followUpsDue > 0 ? 'text-amber-400' : 'text-zinc-400'} href="/pipeline" />
         <Metric label="Proposals Waiting" value={String(metrics.proposalsWaiting)} sub="chase these" icon={FileText} color={metrics.proposalsWaiting > 0 ? 'text-red-400' : 'text-zinc-400'} href="/proposals" />
       </div>
+
+      {/* Claude Command Center — zero-cost AI automation via Cowork */}
+      <ClaudeCommands />
 
       {/* Demo Factory status — real deployed demos */}
       <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
