@@ -1,20 +1,21 @@
 'use client'
 
 /**
- * Founder Dashboard — Phase 1 (Sales)
+ * Founder Dashboard — MISSION CONTROL (2026-07-12)
  *
- * Top strip answers the 8 executive questions at a glance:
- * Revenue Goal · MRR · New Leads · Follow-Ups Due · Proposals Waiting ·
- * Active Clients · Highest ROI Task · Today's Mission
+ * The cockpit for everything Claude does for GR Scale:
+ * System Status → Scoreboard → Today's Mission → Tell Claude Anything →
+ * Command Center 2.0 → Command Queue → What Claude Has Done (activity feed),
+ * followed by the original executive metrics and question cards.
  *
- * Below it, the original 5-question flow, now driven by the persistent
- * store (src/lib/store.ts) instead of hardcoded data.
+ * All CRM data flows through src/lib/store.ts. All generated prompts come
+ * from src/lib/prompts.ts. The activity feed renders src/lib/activity.ts
+ * read-only — that file is Claude's logbook, updated via git pushes.
  */
 
-import { useState } from 'react'
 import Link from 'next/link'
 import {
-  Phone, ChevronRight, DollarSign, Target, TrendingUp,
+  Phone, ChevronRight, DollarSign, Target,
   Zap, Users, FileText, Building2, Flag,
 } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -22,6 +23,12 @@ import { toStage, closestToPaying, revenueOpportunity, buildWorkQueue } from '@/
 import { useOS } from '@/lib/store'
 import { PACKAGES } from '@/lib/packages'
 import { DEMOS_LIVE_COUNT, highestValueDemo } from '@/lib/demos'
+import SystemStatus from '@/components/dashboard/SystemStatus'
+import Scoreboard from '@/components/dashboard/Scoreboard'
+import TellClaude from '@/components/dashboard/TellClaude'
+import CommandCenter from '@/components/dashboard/CommandCenter'
+import CommandQueue from '@/components/dashboard/CommandQueue'
+import ActivityFeed from '@/components/dashboard/ActivityFeed'
 
 // ─── Metric card ──────────────────────────────────────────────────────────────
 
@@ -87,46 +94,13 @@ function QuestionCard({
   )
 }
 
-// ─── Claude Command Center ────────────────────────────────────────────────────
-// Zero-cost automation: each button copies a ready-to-paste command for Claude
-// (in the Claude desktop app / Cowork). Claude executes: finds leads, audits
-// sites, preps outreach. No API keys, no monthly fees.
-
-function ClaudeCommands() {
-  const [copied, setCopied] = useState<string | null>(null)
-  const commands = [
-    { id: 'find',    label: '🔎 Find Leads',      cmd: 'Act as GR Scale\'s Growth Operator. Find me 10 new roofing/plumbing/HVAC leads in Florida (family-owned, 4.5★+, weak or outdated websites). Audit each site, score the opportunity, recommend the package and demo, and write personalized SMS + email + call scripts for each. Load everything into my outreach queue doc.' },
-    { id: 'audit',   label: '🧪 Audit a Website', cmd: 'Act as GR Scale\'s website auditor. Audit this business website: [PASTE URL]. Give me: mobile/speed/trust/CTA/SEO findings, an opportunity score, the recommended GR Scale package, the matching demo link, and a personalized outreach message referencing the #1 specific flaw.' },
-    { id: 'close',   label: '🤝 Help Me Close',   cmd: 'A lead replied to my outreach. Here\'s what they said: [PASTE REPLY]. Act as my sales coach: write my exact response, anticipate their objections, and tell me when to send the proposal and Stripe link.' },
-  ]
-  function copy(cmd: string, id: string) {
-    navigator.clipboard.writeText(cmd)
-    setCopied(id)
-    setTimeout(() => setCopied(null), 2500)
-  }
-  return (
-    <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 px-5 py-4">
-      <p className="text-[10px] font-black tracking-widest text-violet-400 uppercase mb-1">Claude Command Center</p>
-      <p className="text-xs text-zinc-500 mb-3">Press a button → command copies → paste it to Claude in the Claude app. Claude does the work. $0 extra cost.</p>
-      <div className="flex flex-wrap gap-2">
-        {commands.map(c => (
-          <button key={c.id} onClick={() => copy(c.cmd, c.id)}
-            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs font-bold transition ${
-              copied === c.id
-                ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
-                : 'border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20'}`}>
-            {copied === c.id ? '✓ Copied — paste to Claude!' : c.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { data, metrics, ready } = useOS()
+  const {
+    data, metrics, ready,
+    addCommand, setCommandStatus, deleteCommand, setScoreboard, confirmSystem,
+  } = useOS()
 
   const now = new Date()
   const hour = now.getHours()
@@ -154,8 +128,14 @@ export default function DashboardPage() {
       {/* Greeting */}
       <div className="pb-1">
         <h2 className="text-xl font-bold text-zinc-100">{greeting}, Gio.</h2>
-        <p className="text-sm text-zinc-600 mt-0.5">{today} · Here&apos;s what needs your attention.</p>
+        <p className="text-sm text-zinc-600 mt-0.5">{today} · Mission Control — everything Claude runs for GR Scale.</p>
       </div>
+
+      {/* System Status strip */}
+      <SystemStatus confirmations={data.settings.system_confirmations} onConfirm={confirmSystem} />
+
+      {/* Scoreboard — the daily numbers */}
+      <Scoreboard scoreboard={data.settings.scoreboard} onChange={setScoreboard} />
 
       {/* Today's Mission + START WORK */}
       <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 px-5 py-4">
@@ -190,8 +170,17 @@ export default function DashboardPage() {
         <Metric label="Proposals Waiting" value={String(metrics.proposalsWaiting)} sub="chase these" icon={FileText} color={metrics.proposalsWaiting > 0 ? 'text-red-400' : 'text-zinc-400'} href="/proposals" />
       </div>
 
-      {/* Claude Command Center — zero-cost AI automation via Cowork */}
-      <ClaudeCommands />
+      {/* Tell Claude Anything — freeform request → wrapped prompt */}
+      <TellClaude onQueue={addCommand} />
+
+      {/* Command Center 2.0 — one-tap prompt generators */}
+      <CommandCenter onQueue={addCommand} />
+
+      {/* Command Queue — every generated prompt, tracked to Done */}
+      <CommandQueue commands={data.commands} onStatus={setCommandStatus} onDelete={deleteCommand} />
+
+      {/* What Claude Has Done — read-only render of src/lib/activity.ts */}
+      <ActivityFeed />
 
       {/* Demo Factory status — real deployed demos */}
       <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
