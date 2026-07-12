@@ -14,6 +14,11 @@
  * force a reseed on every device. NO FAKE DATA — leads missing details are
  * marked "verify from lead tracker" instead of getting invented numbers.
  *
+ * MISSION CONTROL UPDATE (2026-07-12): Added the Command Queue (every prompt
+ * Mission Control generates for Claude, with Pending → Sent → Done status),
+ * the daily Scoreboard (drafted/sent/replies/meetings/clients/MRR), and
+ * system-status confirmation dates. Key bumped v4 → v5.
+ *
  * Migration path: when Supabase env vars are added, swap the load/save
  * functions here for Supabase queries. No page code changes.
  */
@@ -55,9 +60,32 @@ export interface OSProposal {
   body: string
 }
 
+export type CommandStatus = 'Pending' | 'Sent to Claude' | 'Done'
+
+export interface OSCommand {
+  id: string
+  title: string           // short label, e.g. "Find 10 New Leads — roofing, Tampa"
+  prompt: string          // the full self-contained prompt that was copied
+  created_at: string      // ISO timestamp
+  status: CommandStatus
+}
+
+/** The numbers Gio looks at daily. Edited inline on the dashboard. */
+export interface OSScoreboard {
+  drafted: number
+  sent: number
+  replies: number
+  meetings: number
+  clients: number
+  mrr: number
+}
+
 export interface OSSettings {
   revenue_goal: number          // monthly recurring revenue goal
   todays_mission: string
+  scoreboard: OSScoreboard
+  /** system-status card id → ISO date Gio last confirmed it ran/worked */
+  system_confirmations: Record<string, string>
 }
 
 export interface OSData {
@@ -65,6 +93,7 @@ export interface OSData {
   clients: OSClient[]
   proposals: OSProposal[]
   settings: OSSettings
+  commands: OSCommand[]
 }
 
 // ─── Seed data (loaded once; edits persist in localStorage) ──────────────────
@@ -73,7 +102,10 @@ const SEED: OSData = {
   settings: {
     revenue_goal: 1000,
     todays_mission: 'grscales.com + gio@grscales.com are LIVE. 6 pitch emails sit ready in Gmail drafts — send them, text Top Dog (863) 327-3782, film the site tour. Claude handles the rest.',
+    scoreboard: { drafted: 0, sent: 0, replies: 0, meetings: 0, clients: 0, mrr: 0 },
+    system_confirmations: {},
   },
+  commands: [],
   clients: [],
   proposals: [
     {
@@ -105,17 +137,28 @@ const SEED: OSData = {
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
 
-const KEY = 'gr-scale-os-v4'
+const KEY = 'gr-scale-os-v5'
 
 function load(): OSData {
   if (typeof window === 'undefined') return SEED
   try {
     const raw = window.localStorage.getItem(KEY)
     if (!raw) return SEED
-    const parsed = JSON.parse(raw) as OSData
+    const parsed = JSON.parse(raw) as Partial<OSData>
     // basic shape guard
     if (!parsed.leads || !parsed.settings) return SEED
-    return parsed
+    // deep-merge settings so fields added in later releases get defaults
+    return {
+      ...SEED,
+      ...parsed,
+      commands: parsed.commands ?? [],
+      settings: {
+        ...SEED.settings,
+        ...parsed.settings,
+        scoreboard: { ...SEED.settings.scoreboard, ...(parsed.settings.scoreboard ?? {}) },
+        system_confirmations: { ...SEED.settings.system_confirmations, ...(parsed.settings.system_confirmations ?? {}) },
+      },
+    } as OSData
   } catch {
     return SEED
   }
@@ -219,8 +262,41 @@ export function useOS() {
     update(d => ({ ...d, settings: { ...d.settings, ...s } }))
   }, [update])
 
+  // Mission Control: Command Queue
+  const addCommand = useCallback((title: string, prompt: string) => {
+    const cmd: OSCommand = {
+      id: `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      title, prompt,
+      created_at: new Date().toISOString(),
+      status: 'Pending',
+    }
+    update(d => ({ ...d, commands: [cmd, ...d.commands] }))
+  }, [update])
+
+  const setCommandStatus = useCallback((id: string, status: CommandStatus) => {
+    update(d => ({ ...d, commands: d.commands.map(c => c.id === id ? { ...c, status } : c) }))
+  }, [update])
+
+  const deleteCommand = useCallback((id: string) => {
+    update(d => ({ ...d, commands: d.commands.filter(c => c.id !== id) }))
+  }, [update])
+
+  // Mission Control: Scoreboard
+  const setScoreboard = useCallback((s: Partial<OSScoreboard>) => {
+    update(d => ({ ...d, settings: { ...d.settings, scoreboard: { ...d.settings.scoreboard, ...s } } }))
+  }, [update])
+
+  // Mission Control: System status "last confirmed" dates
+  const confirmSystem = useCallback((systemId: string, isoDate: string) => {
+    update(d => ({
+      ...d,
+      settings: { ...d.settings, system_confirmations: { ...d.settings.system_confirmations, [systemId]: isoDate } },
+    }))
+  }, [update])
+
   return {
     data, ready, update, updateLead, addProposal, convertToClient, setSettings,
+    addCommand, setCommandStatus, deleteCommand, setScoreboard, confirmSystem,
     metrics: computeMetrics(data),
   }
 }
