@@ -9,6 +9,11 @@
  * the single source of truth, persisted to localStorage so data survives
  * refreshes and deploys with ZERO backend setup.
  *
+ * SEED UPDATE (2026-07-11): Replaced placeholder leads (555 numbers) with the
+ * 10 REAL leads from Gr Scales/03-lead-tracker.csv. Key bumped v2 → v3 to
+ * force a reseed on every device. NO FAKE DATA — leads missing details are
+ * marked "verify from lead tracker" instead of getting invented numbers.
+ *
  * Migration path: when Supabase env vars are added, swap the load/save
  * functions here for Supabase queries. No page code changes.
  */
@@ -67,7 +72,7 @@ export interface OSData {
 const SEED: OSData = {
   settings: {
     revenue_goal: 1000,
-    todays_mission: 'Close Melo Air onto the Starter plan. Everything else is second.',
+    todays_mission: 'Send the Top Dog Roofing text: (863) 327-3782. Outreach sent is the only number that matters today.',
   },
   clients: [],
   proposals: [
@@ -84,24 +89,23 @@ const SEED: OSData = {
     },
   ],
   leads: [
-    { id: 'meloair', business_name: 'Melo Air', industry: 'HVAC', city: 'Tampa', phone: '(813) 451-9438', email: 'meloair@gmail.com', website: 'https://meloair.net', status: 'Proposal Sent', website_score: 45, opportunity_score: 95, estimated_deal_value: 99 * 12 + 500, days_since_contact: 1, next_follow_up: new Date().toISOString().slice(0, 10), notes: 'NEW SITE BUILT & LIVE: meloair-v2.vercel.app. Waiting on Gus: approval, plan pricing, hours, photos. CLOSE THIS.', recommended_package: 'starter', proposal_status: 'Sent' },
-    // ─── REAL LEADS (sourced + audited 2026-07-05; verify phone on their site before calling) ───
-    { id: 'topdog', business_name: 'Top Dog Roofing', industry: 'Roofing', city: 'Kissimmee', phone: '(863) 327-3782', email: 'jhosette@topdogroofing.com', website: 'https://www.topdogroofing.com', status: 'New', website_score: 45, opportunity_score: 92, estimated_deal_value: 299 * 12, days_since_contact: 0, next_follow_up: null, notes: 'VERIFIED: 4 broken homepage images right now. Hearst template. 4.9★ Google, 2 locations, 30yr owner. TEXT LINE — SMS first. #1 target.', recommended_package: 'growth', proposal_status: 'None' },
-    { id: 'coastal', business_name: 'Coastal Brothers Roofing', industry: 'Roofing', city: 'Tampa/Pinellas', phone: '(727) 931-7663', website: 'https://coastalbrothersroofing.com', status: 'New', website_score: null, opportunity_score: 80, estimated_deal_value: 99 * 12, days_since_contact: 0, next_follow_up: null, notes: 'Small family-run. Owner likely answers own phone. Audit site 2 min before calling.', proposal_status: 'None' },
-    { id: 'olin', business_name: 'Olin Plumbing', industry: 'Plumbing', city: 'Tampa', phone: '(813) 443-5820', website: 'https://www.plumberstampa.com', status: 'New', website_score: null, opportunity_score: 78, estimated_deal_value: 299 * 12, days_since_contact: 0, next_follow_up: null, notes: 'Family owned 50+ yrs — heritage angle, likely dated site. Confirm flaw before call.', recommended_package: 'growth', proposal_status: 'None' },
-    { id: 'everyday', business_name: 'EverydayPlumber', industry: 'Plumbing', city: 'Tampa', phone: '(813) 872-0200', website: 'https://everydayplumber.com', status: 'New', website_score: null, opportunity_score: 74, estimated_deal_value: 299 * 12, days_since_contact: 0, next_follow_up: null, notes: 'Family owned, same-day service. Audit before touch.', proposal_status: 'None' },
-    { id: 'acoma', business_name: 'Acoma Roofing', industry: 'Roofing', city: 'Tampa', phone: '(727) 733-5580', website: 'https://www.acomaroofing.com', status: 'New', website_score: null, opportunity_score: 72, estimated_deal_value: 99 * 12, days_since_contact: 0, next_follow_up: null, notes: 'Family owned. Audit before touch.', proposal_status: 'None' },
-    { id: 'tamparoof', business_name: 'Tampa Roofing Co', industry: 'Roofing', city: 'Tampa', website: 'https://tamparoofing.com', status: 'New', website_score: null, opportunity_score: 70, estimated_deal_value: 299 * 12, days_since_contact: 0, next_follow_up: null, notes: '4th generation since 1936 — "90 years of roofing deserves better than a template" angle. Find phone on site.', proposal_status: 'None' },
-    { id: 'flroofbros', business_name: 'Florida Roof Bros', industry: 'Roofing', city: 'Clearwater', website: 'https://floridaroofbros.com', status: 'New', website_score: null, opportunity_score: 68, estimated_deal_value: 99 * 12, days_since_contact: 0, next_follow_up: null, notes: 'Small family co, 20+ yrs. Find phone on site.', proposal_status: 'None' },
-    { id: 'larson', business_name: 'Larson Plumbing', industry: 'Plumbing', city: 'Tampa', website: 'https://www.larsonplumbing.net', status: 'New', website_score: null, opportunity_score: 66, estimated_deal_value: 99 * 12, days_since_contact: 0, next_follow_up: null, notes: 'Family owned since 1991. Find phone on site.', proposal_status: 'None' },
-    { id: 'llona', business_name: 'Llona Plumbing', industry: 'Plumbing', city: 'Tampa', website: 'https://llonaplumbing.com', status: 'New', website_score: null, opportunity_score: 65, estimated_deal_value: 99 * 12, days_since_contact: 0, next_follow_up: null, notes: 'Family owned 30+ yrs. Find phone on site.', proposal_status: 'None' },
-    { id: 'doan', business_name: 'Johnny Doan Plumbing', industry: 'Plumbing', city: 'Central FL', website: 'https://www.doanplumbing.com', status: 'New', website_score: null, opportunity_score: 64, estimated_deal_value: 99 * 12, days_since_contact: 0, next_follow_up: null, notes: 'Family owned 50+ yrs. Find phone on site.', proposal_status: 'None' },
+    { id: 'meloair', business_name: 'Melo Air', industry: 'HVAC', city: 'Tampa', phone: '(813) 451-9438', email: 'meloair@gmail.com', website: 'https://meloair.net', status: 'Proposal Sent', website_score: 45, opportunity_score: 95, estimated_deal_value: 99 * 12 + 500, days_since_contact: 1, next_follow_up: new Date().toISOString().slice(0, 10), notes: 'NEW SITE LIVE on meloair.net. Waiting on Gus: approval, plan pricing, hours, photos. Deal paused by Gio — follow up when ready.', recommended_package: 'starter', proposal_status: 'Sent' },
+    { id: 'topdog', business_name: 'Top Dog Roofing', industry: 'Roofing', city: 'Lakeland / Polk County', phone: '(863) 327-3782', email: 'jhosette@topdogroofing.com', website: 'https://topdogroofing.com', status: 'New', website_score: null, opportunity_score: 96, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: new Date().toISOString().slice(0, 10), notes: '#1 TARGET. VERIFIED: broken homepage images + Hearst template. 4.9★, 2 locations — great business, bad site. Text line ready. Scripts in 09-OUTREACH-QUEUE.md.', recommended_package: 'growth', proposal_status: 'None' },
+    { id: 'coastalbros', business_name: 'Coastal Brothers Roofing', industry: 'Roofing', city: 'Pinellas County', phone: '(727) 931-7663', status: 'New', website_score: null, opportunity_score: 85, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Real lead from tracker. Verify website + email from 03-lead-tracker.csv before outreach.', recommended_package: 'growth', proposal_status: 'None' },
+    { id: 'olin', business_name: 'Olin Plumbing', industry: 'Plumbing', city: 'Tampa', phone: '(813) 443-5820', status: 'New', website_score: null, opportunity_score: 82, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Real lead from tracker. Verify website + email from 03-lead-tracker.csv before outreach.', recommended_package: 'growth', proposal_status: 'None' },
+    { id: 'everydayplumber', business_name: 'EverydayPlumber', industry: 'Plumbing', city: 'Tampa Bay Area', status: 'New', website_score: null, opportunity_score: 78, estimated_deal_value: 99 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Real lead from tracker. Pull phone/email/site audit from 03-lead-tracker.csv.', proposal_status: 'None' },
+    { id: 'acoma', business_name: 'Acoma', industry: 'Roofing', city: 'Tampa Bay Area', status: 'New', website_score: null, opportunity_score: 75, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Real lead from tracker. Pull phone/email/site audit from 03-lead-tracker.csv.', proposal_status: 'None' },
+    { id: 'tamparoofingco', business_name: 'Tampa Roofing Co', industry: 'Roofing', city: 'Tampa', status: 'New', website_score: null, opportunity_score: 74, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Real lead from tracker. Pull phone/email/site audit from 03-lead-tracker.csv.', proposal_status: 'None' },
+    { id: 'flroofbros', business_name: 'FL Roof Bros', industry: 'Roofing', city: 'Florida', status: 'New', website_score: null, opportunity_score: 72, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Real lead from tracker. Pull phone/email/site audit from 03-lead-tracker.csv.', proposal_status: 'None' },
+    { id: 'larson', business_name: 'Larson', industry: 'Roofing', city: 'Florida', status: 'New', website_score: null, opportunity_score: 68, estimated_deal_value: 99 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Real lead from tracker. Pull full business name + contact from 03-lead-tracker.csv.', proposal_status: 'None' },
+    { id: 'llona', business_name: 'Llona', industry: 'Roofing', city: 'Florida', status: 'New', website_score: null, opportunity_score: 66, estimated_deal_value: 99 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Real lead from tracker. Pull full business name + contact from 03-lead-tracker.csv.', proposal_status: 'None' },
+    { id: 'doan', business_name: 'Doan', industry: 'Roofing', city: 'Florida', status: 'New', website_score: null, opportunity_score: 64, estimated_deal_value: 99 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Real lead from tracker. Pull full business name + contact from 03-lead-tracker.csv.', proposal_status: 'None' },
   ],
 }
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
 
-const KEY = 'gr-scale-os-v3' // bumped: forces reseed with REAL leads (fictional seed retired)
+const KEY = 'gr-scale-os-v3'
 
 function load(): OSData {
   if (typeof window === 'undefined') return SEED
