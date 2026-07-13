@@ -1,7 +1,9 @@
 'use client'
 
-import { Bell, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Bell, Search, Menu, X } from 'lucide-react'
 import { usePathname } from 'next/navigation'
+import Sidebar from './Sidebar'
 
 const PAGE_TITLES: Record<string, string> = {
   '/start-here': 'Start Here',
@@ -27,17 +29,40 @@ const PAGE_TITLES: Record<string, string> = {
 
 export default function Header() {
   const pathname = usePathname()
+  const [navOpen, setNavOpen] = useState(false)
   const title = PAGE_TITLES[pathname] ?? PAGE_TITLES[Object.keys(PAGE_TITLES).find(k => pathname.startsWith(k) && k !== '/') ?? '/'] ?? 'GR Scale OS'
+
+  // Close the mobile drawer whenever navigation happens
+  useEffect(() => { setNavOpen(false) }, [pathname])
 
   const now = new Date()
   const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
   const date = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-zinc-800/80 bg-[#0a0a0b]/95 px-6 backdrop-blur">
-      <div className="flex-1">
-        <h1 className="text-base font-semibold text-zinc-100">{title}</h1>
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-zinc-800/80 bg-[#0a0a0b]/95 px-4 md:px-6 backdrop-blur">
+      {/* Mobile: hamburger opens the sidebar as a drawer */}
+      <button onClick={() => setNavOpen(true)} aria-label="Open navigation"
+        className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition">
+        <Menu className="h-5 w-5" />
+      </button>
+
+      <div className="flex-1 min-w-0">
+        <h1 className="text-base font-semibold text-zinc-100 truncate">{title}</h1>
       </div>
+
+      {navOpen && (
+        <div className="fixed inset-0 z-50 md:hidden" onClick={() => setNavOpen(false)}>
+          <div className="absolute inset-0 bg-black/70" />
+          <div className="relative" onClick={e => e.stopPropagation()}>
+            <Sidebar />
+            <button onClick={() => setNavOpen(false)} aria-label="Close navigation"
+              className="fixed left-[232px] top-4 z-50 flex h-9 w-9 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-300">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
         <div className="hidden md:flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-sm text-zinc-500">
