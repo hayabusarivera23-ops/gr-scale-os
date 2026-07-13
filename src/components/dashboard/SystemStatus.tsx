@@ -43,8 +43,8 @@ export default function SystemStatus({ confirmations, onConfirm }: {
 }) {
   const [toast, setToast] = useState<string | null>(null)
 
-  async function copyHealthCheck() {
-    await copyText(buildHealthCheckPrompt())
+  function copyHealthCheck() {
+    void copyText(buildHealthCheckPrompt())
     setToast('Health-check prompt copied — paste into Claude')
     setTimeout(() => setToast(null), 3000)
   }
@@ -54,7 +54,7 @@ export default function SystemStatus({ confirmations, onConfirm }: {
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <Activity className="h-4 w-4 text-emerald-400" />
         <p className="text-[10px] font-black tracking-widest text-emerald-500 uppercase">System Status</p>
-        <button onClick={() => void copyHealthCheck()}
+        <button onClick={copyHealthCheck}
           className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold text-emerald-400 hover:bg-emerald-500/20 transition">
           <Stethoscope className="h-3.5 w-3.5" /> Copy health-check prompt
         </button>

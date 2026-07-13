@@ -26,12 +26,14 @@ export default function CommandCenter({ onQueue }: {
     setActive(cmd)
   }
 
-  async function generate(cmd: CommandDef) {
+  function generate(cmd: CommandDef) {
     const prompt = cmd.build(values)
     const inputSummary = cmd.inputs.map(i => values[i.id]).filter(Boolean).join(', ')
     const title = inputSummary ? `${cmd.label} — ${inputSummary}` : cmd.label
-    await copyText(prompt)
+    // Queue first, then copy: the command must be logged even if the
+    // clipboard is blocked or slow on this device.
     onQueue(title, prompt)
+    void copyText(prompt)
     setActive(null)
     setToast('Copied — paste into Claude')
     setTimeout(() => setToast(null), 3000)
@@ -80,7 +82,7 @@ export default function CommandCenter({ onQueue }: {
                       type="text"
                       value={values[input.id] ?? ''}
                       onChange={e => setValues(v => ({ ...v, [input.id]: e.target.value }))}
-                      onKeyDown={e => { if (e.key === 'Enter') void generate(active) }}
+                      onKeyDown={e => { if (e.key === 'Enter') generate(active) }}
                       placeholder={input.placeholder}
                       autoFocus={input.id === active.inputs[0]?.id}
                       className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:border-violet-500/60 focus:outline-none"
@@ -92,7 +94,7 @@ export default function CommandCenter({ onQueue }: {
               <p className="text-xs text-zinc-600 mb-4">No inputs needed — the prompt is ready to generate.</p>
             )}
 
-            <button onClick={() => void generate(active)}
+            <button onClick={() => generate(active)}
               className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-violet-500 px-4 py-3 text-sm font-black text-white hover:bg-violet-400 active:scale-[0.99] transition">
               <Copy className="h-4 w-4" /> Generate & Copy Prompt
             </button>

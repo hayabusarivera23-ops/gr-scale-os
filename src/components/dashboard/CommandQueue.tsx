@@ -35,14 +35,14 @@ export default function CommandQueue({ commands, onStatus, onDelete }: {
     setTimeout(() => setToast(null), 3000)
   }
 
-  async function copyOne(cmd: OSCommand) {
-    await copyText(cmd.prompt)
+  function copyOne(cmd: OSCommand) {
+    void copyText(cmd.prompt)
     flash('Copied — paste into Claude')
   }
 
-  async function copyBatch() {
+  function copyBatch() {
     if (pending.length === 0) return
-    await copyText(buildBatchPrompt(pending))
+    void copyText(buildBatchPrompt(pending))
     flash(`Batch of ${pending.length} copied — paste into Claude`)
   }
 
@@ -58,7 +58,7 @@ export default function CommandQueue({ commands, onStatus, onDelete }: {
         <p className="text-[10px] font-black tracking-widest text-amber-500 uppercase">Command Queue</p>
         <span className="text-[10px] text-zinc-600">{pending.length} pending</span>
         {pending.length > 0 && (
-          <button onClick={() => void copyBatch()}
+          <button onClick={copyBatch}
             className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] font-bold text-amber-400 hover:bg-amber-500/20 transition">
             <Layers className="h-3.5 w-3.5" /> Copy batch prompt ({pending.length})
           </button>
@@ -82,7 +82,7 @@ export default function CommandQueue({ commands, onStatus, onDelete }: {
                 {cmd.status}
               </button>
               <div className="flex items-center gap-1">
-                <button onClick={() => void copyOne(cmd)} title="Copy prompt again"
+                <button onClick={() => copyOne(cmd)} title="Copy prompt again"
                   className="p-2 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition">
                   <Copy className="h-4 w-4" />
                 </button>
