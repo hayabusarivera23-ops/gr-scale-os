@@ -25,6 +25,12 @@ export interface ActivityEntry {
 export const ACTIVITY: ActivityEntry[] = [
   {
     date: '2026-07-12',
+    category: 'build',
+    title: 'grscales.com upgraded with FX v3 — deployed to production',
+    detail: 'Added count-up stats, 3D tilt + cursor-spotlight cards, drifting aurora backgrounds, animated glow dividers, button sheen, parallax hero, nav underline, and staggered scroll reveals across every homepage section. Pushed to main; Vercel deployed.',
+  },
+  {
+    date: '2026-07-12',
     category: 'system',
     title: 'Mission Control launched — this feed is now Claude\'s logbook',
     detail: 'Claude will append an entry here on every work session (outreach runs, demo builds, content drops, dashboard syncs) and push to main so this feed always shows the latest work. Newest entries appear first.',
