@@ -4,13 +4,16 @@
  * Founder Dashboard — MISSION CONTROL (2026-07-12)
  *
  * The cockpit for everything Claude does for GR Scale:
- * System Status → Scoreboard → Today's Mission → Tell Claude Anything →
- * Command Center 2.0 → Command Queue → What Claude Has Done (activity feed),
- * followed by the original executive metrics and question cards.
+ * System Status → AI Employees (roster + live dispatch desk) → Scoreboard →
+ * Today's Mission → Tell Claude Anything → Command Center 2.0 → Command Queue →
+ * What Claude Has Done (activity feed), followed by the original executive
+ * metrics and question cards.
  *
  * All CRM data flows through src/lib/store.ts. All generated prompts come
  * from src/lib/prompts.ts. The activity feed renders src/lib/activity.ts
  * read-only — that file is Claude's logbook, updated via git pushes.
+ * AI Employees dispatches real work orders through /api/queue →
+ * ops/commands.json, picked up by Claude's Order Runner 5x daily.
  */
 
 import Link from 'next/link'
@@ -29,6 +32,7 @@ import TellClaude from '@/components/dashboard/TellClaude'
 import CommandCenter from '@/components/dashboard/CommandCenter'
 import CommandQueue from '@/components/dashboard/CommandQueue'
 import ActivityFeed from '@/components/dashboard/ActivityFeed'
+import AIEmployees from '@/components/dashboard/AIEmployees'
 
 // ─── Metric card ──────────────────────────────────────────────────────────────
 
@@ -133,6 +137,9 @@ export default function DashboardPage() {
 
       {/* System Status strip */}
       <SystemStatus confirmations={data.settings.system_confirmations} onConfirm={confirmSystem} />
+
+      {/* AI Employees — the staff roster + live dispatch desk */}
+      <AIEmployees />
 
       {/* Scoreboard — the daily numbers */}
       <Scoreboard scoreboard={data.settings.scoreboard} onChange={setScoreboard} />
