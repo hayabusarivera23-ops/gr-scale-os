@@ -1,0 +1,10 @@
+{
+  "employees": [
+    { "id": "scout",  "name": "Scout",  "emoji": "🕵️", "role": "Lead Hunter",      "schedule": "Daily · 7:00 AM",              "status": "active", "focus": "", "instructions": "", "lastRun": "", "lastReport": "" },
+    { "id": "penny",  "name": "Penny",  "emoji": "📬", "role": "Inbox Manager",    "schedule": "Daily · 4:00 PM",              "status": "active", "focus": "", "instructions": "", "lastRun": "", "lastReport": "" },
+    { "id": "ace",    "name": "Ace",    "emoji": "🎬", "role": "Content Producer", "schedule": "Daily · 6:30 PM",              "status": "active", "focus": "", "instructions": "", "lastRun": "", "lastReport": "" },
+    { "id": "patch",  "name": "Patch",  "emoji": "🩺", "role": "Site Guardian",    "schedule": "Mondays · 4:30 PM",            "status": "active", "focus": "", "instructions": "", "lastRun": "", "lastReport": "" },
+    { "id": "runner", "name": "Runner", "emoji": "⚡", "role": "Order Executor",   "schedule": "5x daily · 9a/12p/3p/6p/9p",   "status": "active", "focus": "", "instructions": "", "lastRun": "", "lastReport": "" },
+    { "id": "sage",   "name": "Sage",   "emoji": "🌱", "role": "Growth Officer",   "schedule": "Daily · 12:30 PM",             "status": "active", "focus": "", "instructions": "", "lastRun": "", "lastReport": "" }
+  ]
+}
