@@ -33,6 +33,7 @@ import CommandCenter from '@/components/dashboard/CommandCenter'
 import CommandQueue from '@/components/dashboard/CommandQueue'
 import ActivityFeed from '@/components/dashboard/ActivityFeed'
 import AIEmployees from '@/components/dashboard/AIEmployees'
+import MissionControl from '@/components/dashboard/MissionControl'
 
 // ─── Metric card ──────────────────────────────────────────────────────────────
 
@@ -137,6 +138,9 @@ export default function DashboardPage() {
 
       {/* System Status strip */}
       <SystemStatus confirmations={data.settings.system_confirmations} onConfirm={confirmSystem} />
+
+      {/* Mission Control — one-tap shortcuts to every site & tool */}
+      <MissionControl />
 
       {/* AI Employees — the staff roster + live dispatch desk */}
       <AIEmployees />
