@@ -35,7 +35,7 @@ export default function CommandCenter({ onQueue }: {
     onQueue(title, prompt)
     void copyText(prompt)
     setActive(null)
-    setToast('Copied — paste into Claude')
+    setToast('Copied - paste into Claude or ChatGPT')
     setTimeout(() => setToast(null), 3000)
   }
 
@@ -43,7 +43,7 @@ export default function CommandCenter({ onQueue }: {
     <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 px-5 py-4">
       <p className="text-[10px] font-black tracking-widest text-violet-400 uppercase mb-1">Command Center</p>
       <p className="text-xs text-zinc-500 mb-3">
-        Tap a command → it builds a complete prompt with all GR Scale context → copies to clipboard → paste into Claude. Every command is logged in the queue below.
+        Tap a command - it builds a complete prompt with all GR Scale context, copies to clipboard, and logs it below. Paste it into Claude or ChatGPT.
       </p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">

@@ -46,11 +46,11 @@ export default function SettingsPage() {
           <h3 className="text-sm font-semibold text-zinc-300">Agency Information</h3>
           {[
             { label: 'Agency Name', defaultValue: 'GR Scale', placeholder: 'Your agency name' },
-            { label: 'Tagline', defaultValue: 'HVAC Websites That Convert', placeholder: 'Your tagline' },
+            { label: 'Tagline', defaultValue: 'Websites That Make Local Businesses Money', placeholder: 'Your tagline' },
             { label: 'Your Name', defaultValue: 'Gio', placeholder: 'Your name' },
-            { label: 'Email', defaultValue: 'gio@grscale.com', placeholder: 'Contact email' },
-            { label: 'Phone', defaultValue: '(407) 555-0100', placeholder: 'Business phone' },
-            { label: 'City', defaultValue: 'Orlando', placeholder: 'City' },
+            { label: 'Email', defaultValue: 'gio@grscales.com', placeholder: 'Contact email' },
+            { label: 'Phone', defaultValue: '(813) 869-5917', placeholder: 'Business phone' },
+            { label: 'City', defaultValue: 'Tampa', placeholder: 'City' },
             { label: 'State', defaultValue: 'FL', placeholder: 'State' },
           ].map(({ label, defaultValue, placeholder }) => (
             <div key={label}>
@@ -65,8 +65,9 @@ export default function SettingsPage() {
           <div>
             <label className="text-xs text-zinc-500 mb-1.5 block">Primary Niche</label>
             <select className="input-base">
-              <option>HVAC</option>
               <option>Barbershop</option>
+              <option>Local Service Businesses</option>
+              <option>HVAC</option>
               <option>Roofing</option>
               <option>Plumbing</option>
               <option>General Local Business</option>

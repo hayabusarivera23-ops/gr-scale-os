@@ -14,11 +14,11 @@ import { buildBatchPrompt } from '@/lib/prompts'
 import type { OSCommand, CommandStatus } from '@/lib/store'
 import CopyToast from './CopyToast'
 
-const STATUS_ORDER: CommandStatus[] = ['Pending', 'Sent to Claude', 'Done']
+const STATUS_ORDER: CommandStatus[] = ['Pending', 'Sent to AI', 'Done']
 
 const STATUS_STYLE: Record<CommandStatus, string> = {
   'Pending':        'text-amber-400 bg-amber-500/10 border-amber-500/30',
-  'Sent to Claude': 'text-sky-400 bg-sky-500/10 border-sky-500/30',
+  'Sent to AI':      'text-sky-400 bg-sky-500/10 border-sky-500/30',
   'Done':           'text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
 }
 
@@ -37,13 +37,13 @@ export default function CommandQueue({ commands, onStatus, onDelete }: {
 
   function copyOne(cmd: OSCommand) {
     void copyText(cmd.prompt)
-    flash('Copied — paste into Claude')
+    flash('Copied - paste into Claude or ChatGPT')
   }
 
   function copyBatch() {
     if (pending.length === 0) return
     void copyText(buildBatchPrompt(pending))
-    flash(`Batch of ${pending.length} copied — paste into Claude`)
+    flash(`Batch of ${pending.length} copied - paste into Claude or ChatGPT`)
   }
 
   function cycleStatus(cmd: OSCommand) {
@@ -67,7 +67,7 @@ export default function CommandQueue({ commands, onStatus, onDelete }: {
 
       {commands.length === 0 ? (
         <p className="px-5 py-6 text-xs text-zinc-600">
-          Nothing queued yet. Generate a command above or type into the Tell Claude box — everything you copy gets logged here so you can track what Claude has and hasn&apos;t done.
+          Nothing queued yet. Generate a command above or type into the Tell AI box - everything you copy gets logged here so you can track what the AI operator has and hasn&apos;t done.
         </p>
       ) : (
         <div className="divide-y divide-zinc-800/60">

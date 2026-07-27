@@ -60,7 +60,7 @@ export interface OSProposal {
   body: string
 }
 
-export type CommandStatus = 'Pending' | 'Sent to Claude' | 'Done'
+export type CommandStatus = 'Pending' | 'Sent to AI' | 'Done'
 
 export interface OSCommand {
   id: string
@@ -151,7 +151,10 @@ function load(): OSData {
     return {
       ...SEED,
       ...parsed,
-      commands: parsed.commands ?? [],
+      commands: (parsed.commands ?? []).map(command => ({
+        ...command,
+        status: String(command.status) === 'Sent to Claude' ? 'Sent to AI' : command.status,
+      })),
       settings: {
         ...SEED.settings,
         ...parsed.settings,

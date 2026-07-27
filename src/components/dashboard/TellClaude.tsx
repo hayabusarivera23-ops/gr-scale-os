@@ -29,7 +29,7 @@ export default function TellClaude({ onQueue }: {
     onQueue(title, prompt)
     void copyText(prompt)
     setText('')
-    setToast('Copied — paste into Claude')
+    setToast('Copied - paste into Claude or ChatGPT')
     setTimeout(() => setToast(null), 3000)
   }
 
@@ -37,10 +37,10 @@ export default function TellClaude({ onQueue }: {
     <div className="rounded-xl border border-sky-500/40 bg-sky-500/5 px-5 py-4">
       <div className="flex items-center gap-2 mb-1">
         <Sparkles className="h-4 w-4 text-sky-400" />
-        <p className="text-[10px] font-black tracking-widest text-sky-400 uppercase">Tell Claude Anything</p>
+        <p className="text-[10px] font-black tracking-widest text-sky-400 uppercase">Tell AI Anything</p>
       </div>
       <p className="text-xs text-zinc-500 mb-3">
-        Type any request in your own words. It gets wrapped with full GR Scale context, copied, and queued — paste it into Claude and your executive team gets to work.
+        Type any request in your own words. It gets wrapped with full GR Scale context, copied, and queued - paste it into Claude or ChatGPT.
       </p>
       <textarea
         value={text}
@@ -52,7 +52,7 @@ export default function TellClaude({ onQueue }: {
       />
       <button onClick={submit} disabled={!text.trim()}
         className="mt-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-6 py-3 text-sm font-black text-white hover:bg-sky-400 active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none transition">
-        <Copy className="h-4 w-4" /> Copy Prompt for Claude
+        <Copy className="h-4 w-4" /> Copy Prompt for AI
       </button>
       <CopyToast message={toast} />
     </div>
