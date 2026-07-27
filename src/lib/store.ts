@@ -101,7 +101,7 @@ export interface OSData {
 const SEED: OSData = {
   settings: {
     revenue_goal: 1000,
-    todays_mission: 'grscales.com + gio@grscales.com are LIVE. 6 pitch emails sit ready in Gmail drafts — send them, text Top Dog (863) 327-3782, film the site tour. Claude handles the rest.',
+    todays_mission: 'grscales.com + gio@grscales.com are the business hub. Finish Zoho verification, approve today\'s best outreach, send one real message, and log sent/replies/meetings here.',
     scoreboard: { drafted: 0, sent: 0, replies: 0, meetings: 0, clients: 0, mrr: 0 },
     system_confirmations: {},
   },
@@ -122,7 +122,7 @@ const SEED: OSData = {
   ],
   leads: [
     { id: 'meloair', business_name: 'Melo Air', industry: 'HVAC', city: 'Tampa', phone: '(813) 451-9438', email: 'meloair@gmail.com', website: 'https://meloair.net', status: 'Proposal Sent', website_score: 45, opportunity_score: 95, estimated_deal_value: 99 * 12 + 500, days_since_contact: 1, next_follow_up: new Date().toISOString().slice(0, 10), notes: 'NEW SITE LIVE on meloair.net. Waiting on Gus: approval, plan pricing, hours, photos. Deal paused by Gio — follow up when ready.', recommended_package: 'starter', proposal_status: 'Sent' },
-    { id: 'topdog', business_name: 'Top Dog Roofing', industry: 'Roofing', city: 'Lakeland / Polk County', phone: '(863) 327-3782', email: 'jhosette@topdogroofing.com', website: 'https://topdogroofing.com', status: 'New', website_score: null, opportunity_score: 96, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: new Date().toISOString().slice(0, 10), notes: '#1 TARGET. VERIFIED: broken homepage images + Hearst template. 4.9★, 2 locations. EMAIL DRAFT READY IN GMAIL + text script ready. Send today.', recommended_package: 'growth', proposal_status: 'None' },
+    { id: 'topdog', business_name: 'Top Dog Roofing', industry: 'Roofing', city: 'Lakeland / Polk County', phone: '(863) 327-3782', email: 'jhosette@topdogroofing.com', website: 'https://topdogroofing.com', status: 'New', website_score: null, opportunity_score: 96, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: new Date().toISOString().slice(0, 10), notes: '#1 TARGET. VERIFIED: broken homepage images + Hearst template. 4.9★, 2 locations. Draft outreach ready for Zoho/email + text script ready. Send today.', recommended_package: 'growth', proposal_status: 'None' },
     { id: 'coastalbros', business_name: 'Coastal Brothers Roofing', industry: 'Roofing', city: 'Odessa, FL', phone: '(727) 931-7663', email: 'drake@coastalbrothersroofing.com', website: 'https://coastalbrothersroofing.com', status: 'New', website_score: null, opportunity_score: 85, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: '3rd-gen family roofing co. EMAIL DRAFT READY IN GMAIL — site doesn\'t match reputation angle.', recommended_package: 'growth', proposal_status: 'None' },
     { id: 'olin', business_name: 'Olin Plumbing', industry: 'Plumbing', city: 'Tampa', phone: '(813) 443-5820', email: 'Info@OlinPlumbingInc.com', website: 'https://www.plumberstampa.com', status: 'New', website_score: null, opportunity_score: 82, estimated_deal_value: 299 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Decades in business, strong Yelp. Dated site. EMAIL DRAFT READY IN GMAIL.', recommended_package: 'growth', proposal_status: 'None' },
     { id: 'everydayplumber', business_name: 'EverydayPlumber', industry: 'Plumbing', city: 'Tampa', phone: '(813) 872-0200', email: 'info@everydayplumber.com', website: 'https://everydayplumber.com', status: 'New', website_score: null, opportunity_score: 78, estimated_deal_value: 99 * 12 + 500, days_since_contact: 0, next_follow_up: null, notes: 'Solid reviews. Mobile conversion angle. EMAIL DRAFT READY IN GMAIL.', proposal_status: 'None' },
@@ -137,7 +137,7 @@ const SEED: OSData = {
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
 
-const KEY = 'gr-scale-os-v5'
+const KEY = 'gr-scale-os-v6'
 
 function load(): OSData {
   if (typeof window === 'undefined') return SEED

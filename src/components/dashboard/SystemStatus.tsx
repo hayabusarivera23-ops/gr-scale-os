@@ -1,10 +1,10 @@
 'use client'
 
 /**
- * System Status strip — website, email, and the 4 scheduled Claude jobs.
+ * System Status strip — website, email, and the supervised workflow checks.
  * Nothing here is auto-detected (no backend): Gio taps a card to record
  * "confirmed working today", and the dot color shows how stale the last
- * confirmation is. The health-check button copies a prompt asking Claude to
+ * confirmation is. The health-check button copies a prompt asking the AI operator to
  * verify everything and sync the dashboard.
  */
 
@@ -26,10 +26,10 @@ interface SystemDef {
 const SYSTEMS: SystemDef[] = [
   { id: 'website',     label: 'Website',           sub: 'grscales.com',                          schedule: 'Always on',    staleAfterDays: 7 },
   { id: 'email',       label: 'Email',             sub: 'gio@grscales.com',                      schedule: 'Always on',    staleAfterDays: 7 },
-  { id: 'job-engine',  label: 'Daily Engine',      sub: '10 pitch drafts + reply scan + report', schedule: 'Daily 7:00am', staleAfterDays: 1 },
-  { id: 'job-replies', label: 'Reply Scan',        sub: 'afternoon inbox sweep',                 schedule: 'Daily 4:00pm', staleAfterDays: 1 },
-  { id: 'job-content', label: 'Content Factory',   sub: 'week of content drafts',                schedule: 'Sun 5:00pm',   staleAfterDays: 7 },
-  { id: 'job-health',  label: 'Site Health Check', sub: 'all sites + demos verified',            schedule: 'Mon',          staleAfterDays: 7 },
+  { id: 'job-engine',  label: 'Daily Engine',      sub: 'lead drafts + reply checklist + report', schedule: 'Ready daily', staleAfterDays: 1 },
+  { id: 'job-replies', label: 'Reply Scan',        sub: 'Zoho inbox sweep when connected',        schedule: 'Ready daily', staleAfterDays: 1 },
+  { id: 'job-content', label: 'Content Factory',   sub: 'week of content drafts',                 schedule: 'Weekly',      staleAfterDays: 7 },
+  { id: 'job-health',  label: 'Site Health Check', sub: 'all sites + demos verified',             schedule: 'Weekly',      staleAfterDays: 7 },
 ]
 
 function daysSince(isoDate: string): number {
@@ -45,7 +45,7 @@ export default function SystemStatus({ confirmations, onConfirm }: {
 
   function copyHealthCheck() {
     void copyText(buildHealthCheckPrompt())
-    setToast('Health-check prompt copied — paste into Claude')
+    setToast('Health-check prompt copied — paste into Claude or ChatGPT')
     setTimeout(() => setToast(null), 3000)
   }
 

@@ -33,7 +33,7 @@ const GROUPS: { title: string; tiles: Tile[] }[] = [
   {
     title: 'Business Tools',
     tiles: [
-      { label: 'Gmail', sub: 'gio@grscales.com', href: 'https://mail.google.com', icon: Mail, color: 'text-red-400' },
+      { label: 'Zoho Mail', sub: 'gio@grscales.com', href: 'https://mail.zoho.com', icon: Mail, color: 'text-red-400' },
       { label: 'Vercel', sub: 'Deploys & hosting', href: 'https://vercel.com/gio-rivera-s-projects', icon: Triangle, color: 'text-zinc-300' },
       { label: 'GitHub', sub: 'gr-scale-os code', href: 'https://github.com/hayabusarivera23-ops/gr-scale-os', icon: Github, color: 'text-zinc-300' },
       { label: 'Google Business', sub: 'Local profile', href: 'https://business.google.com', icon: MapPin, color: 'text-amber-400' },

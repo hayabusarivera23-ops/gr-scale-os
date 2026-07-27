@@ -2,11 +2,11 @@
  * GR Scale OS — Prompt Engine
  *
  * SINGLE SOURCE OF TRUTH for every prompt Mission Control generates for
- * Claude. Each builder returns a COMPLETE, self-contained prompt: full
- * business context baked in, so Claude can run it with ZERO extra context.
+ * the AI operator. Each builder returns a COMPLETE, self-contained prompt:
+ * full business context baked in, so Claude or ChatGPT can run it with ZERO extra context.
  *
  * ARCHITECTURE: this site never calls an API and never sends anything itself.
- * Gio copies a prompt → pastes it into Claude → Claude does the work and
+ * Gio copies a prompt → pastes it into Claude or ChatGPT → the AI drafts the work and
  * reports back. Every prompt ends with a report-back instruction so Gio can
  * log the result in the Command Queue and Claude can update the activity feed.
  */
@@ -17,7 +17,7 @@ export const BUSINESS_CONTEXT = `BUSINESS CONTEXT — GR Scale (read this first,
 - GR Scale is Gio Rivera's web agency: websites for local service businesses, nationwide. Site: grscales.com · Email: gio@grscales.com · Phone: (813) 869-5917.
 - Packages: Starter $99/mo (hosting, updates, edits, backups) · Growth $299/mo (adds local SEO, Google Business Profile, monthly reports) · Scale $599+/mo (adds advanced SEO, landing pages, AI chatbot, reputation management, lead tracking). One-time build fee $500-750.
 - Proof to show prospects: meloair.net (real HVAC client site), lexthebarber.com (real barber client site), and 13 live niche demos at gr-scale-demos.vercel.app (hvac, roofing, plumbing, electrician, pest-control, cleaning, painting, flooring, tree-service, pressure-washing, landscaping, restaurant, barber).
-- Claude already runs scheduled jobs: 7am daily engine (10 pitch drafts into Gmail + reply scan + report to Downloads), 4pm reply scan, Sunday 5pm content factory, Monday site health check.
+- GR Scale uses a supervised AI workflow: lead scan, audit, pitch drafts, approval queue, Zoho Mail sending, reply scan, weekly content, and site health checks. Nothing sends until Gio approves it.
 - Mission Control dashboard lives in the GitHub repo hayabusarivera23-ops/gr-scale-os. Claude's state files there: src/lib/store.ts (CRM seed — bump the localStorage KEY version when the seed changes) and src/lib/activity.ts (Claude's logbook — prepend an entry every work session).
 - HARD RULE: never send anything to a business yourself. Produce drafts for Gio's approval only.`
 
@@ -80,7 +80,7 @@ export const COMMANDS: CommandDef[] = [
     inputs: [],
     build: () => assemble(
       "GR Scale's pipeline manager.",
-      `Check the current pipeline state: read the lead seed in src/lib/store.ts in the gr-scale-os repo and the pipeline/outreach logs from your previous work sessions (Gmail drafts, reports in Downloads). Identify every lead that was contacted but hasn't replied, or has a follow-up due or overdue. For each, draft a short, personalized follow-up (email + SMS versions) that references the original hook and adds one new reason to act. Stage the email drafts in Gmail. Do NOT send anything.`,
+      `Check the current pipeline state: read the lead seed in src/lib/store.ts in the gr-scale-os repo and the pipeline/outreach logs from previous work sessions. Identify every lead that was contacted but hasn't replied, or has a follow-up due or overdue. For each, draft a short, personalized follow-up (email + SMS versions) that references the original hook and adds one new reason to act. Prepare drafts for Gio to review in Zoho Mail or the approval queue. Do NOT send anything.`,
     ),
   },
   {
@@ -129,7 +129,7 @@ export const COMMANDS: CommandDef[] = [
     inputs: [],
     build: () => assemble(
       "GR Scale's operations engineer.",
-      `Sync Mission Control (repo hayabusarivera23-ops/gr-scale-os) with the latest real state of the business: (1) update the lead/client/proposal seed in src/lib/store.ts to match reality from your recent work sessions, reports, and Gmail drafts — and bump the localStorage KEY version so every device reseeds; (2) prepend entries to src/lib/activity.ts covering all work done since the last entry; (3) push to main so Vercel deploys. Tell Gio exactly what changed.`,
+      `Sync Mission Control (repo hayabusarivera23-ops/gr-scale-os) with the latest real state of the business: (1) update the lead/client/proposal seed in src/lib/store.ts to match reality from your recent work sessions, reports, Zoho drafts, and approved outreach — and bump the localStorage KEY version so every device reseeds; (2) prepend entries to src/lib/activity.ts covering all work done since the last entry; (3) push to main so Vercel deploys. Tell Gio exactly what changed.`,
     ),
   },
   {
@@ -161,7 +161,7 @@ export function buildFreeformPrompt(request: string): string {
 export function buildHealthCheckPrompt(): string {
   return assemble(
     "GR Scale's systems auditor.",
-    `Run a full health check and report status for each item: (1) grscales.com — loads fast, mobile OK, contact info correct ((813) 869-5917 / gio@grscales.com), no broken links; (2) gio@grscales.com — receiving and sending correctly, staged pitch drafts still in Gmail; (3) client sites meloair.net and lexthebarber.com — up and error-free; (4) the 13 demos at gr-scale-demos.vercel.app — all loading; (5) your scheduled jobs (7am engine, 4pm reply scan, Sunday 5pm content factory, Monday site health check) — confirm each ran on schedule and what it produced last run. Give Gio a pass/fail per item with dates, fix what you can, and sync src/lib/activity.ts in the gr-scale-os repo so the dashboard reflects this check.`,
+    `Run a full health check and report status for each item: (1) grscales.com — loads fast, mobile OK, contact info correct ((813) 869-5917 / gio@grscales.com), no broken links; (2) gio@grscales.com — Zoho Mail receiving and sending correctly; (3) client sites meloair.net and lexthebarber.com — up and error-free; (4) the 13 demos at gr-scale-demos.vercel.app — all loading; (5) supervised workflow — lead scan, reply scan, content factory, and site health checks are ready or running with real dates. Give Gio a pass/fail per item with dates, fix what you can, and sync src/lib/activity.ts in the gr-scale-os repo so the dashboard reflects this check.`,
   )
 }
 
