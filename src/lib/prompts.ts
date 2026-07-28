@@ -108,6 +108,57 @@ export const COMMANDS: CommandDef[] = [
     ),
   },
   {
+    id: 'overnight-marketing-sprint',
+    label: 'Overnight Marketing Sprint',
+    emoji: 'MKT',
+    description: 'Big marketing plan + assets for tomorrow',
+    inputs: [],
+    build: () => assemble(
+      "GR Scale's overnight marketing operator.",
+      `Work like an overnight marketing team for GR Scale, but do not send, publish, charge, or change accounts. Create a ready-for-Gio marketing packet for tomorrow morning with: (1) the 5 highest-priority lead types to target first, starting with barbers/barbershops; (2) 10 lead research criteria Gio can use on Google Maps; (3) 5 SMS drafts, 5 email drafts, and 5 Instagram DM drafts for barber prospects; (4) a 7-day social content calendar for Instagram/TikTok/Facebook; (5) 3 short video scripts Gio can film after school; (6) a simple offer stack for Starter, Growth, and Scale; (7) a morning action list with the exact first 3 messages Gio should approve and send. Use only real GR Scale facts. No fake clients, fake results, or fake testimonials.`,
+    ),
+  },
+  {
+    id: 'barber-outreach-pack',
+    label: 'Barber Outreach Pack',
+    emoji: 'BAR',
+    description: 'Barber-specific messages + follow-ups',
+    inputs: [
+      { id: 'area', label: 'Target area', placeholder: 'e.g. Tampa, Lakeland, Orlando' },
+    ],
+    build: v => assemble(
+      "GR Scale's barber niche closer.",
+      `Create a barber/barbershop outreach pack for ${v.area || 'Tampa, Lakeland, and Orlando'}. GR Scale's proof site is lexthebarber.com. Deliver: (1) the best opening angle for barbers; (2) 10 personalization hooks to look for on a shop's current website/Google/Instagram; (3) 5 text messages, 5 emails, and 5 Instagram DMs; (4) 3 follow-ups spaced over 7 days; (5) a 20-minute call script for Gio; (6) a one-page proposal outline for the Growth plan. Do not claim anything was sent. Make everything copy-paste ready for Gio approval.`,
+    ),
+  },
+  {
+    id: 'social-content-machine',
+    label: 'Social Content Machine',
+    emoji: 'SOC',
+    description: 'Posts, reels, captions, and hooks',
+    inputs: [
+      { id: 'days', label: 'Days of content', placeholder: 'e.g. 7' },
+      { id: 'niche', label: 'Audience', placeholder: 'e.g. barbershop owners' },
+    ],
+    build: v => assemble(
+      "GR Scale's social content producer.",
+      `Build ${v.days || '7'} days of social content for ${v.niche || 'barbershop owners and local service businesses'}. Include: (1) one post idea per day; (2) a short reel script Gio can film; (3) shot list; (4) caption; (5) hashtags; (6) CTA; (7) which proof/demo link to mention. Keep it natural for a 16-year-old founder building real sites, not corporate. No fake numbers or fake testimonials.`,
+    ),
+  },
+  {
+    id: 'offer-and-funnel',
+    label: 'Offer + Funnel Copy',
+    emoji: 'FUN',
+    description: 'Sharper offer, landing copy, and CTA flow',
+    inputs: [
+      { id: 'niche', label: 'Niche', placeholder: 'e.g. barbershops' },
+    ],
+    build: v => assemble(
+      "GR Scale's offer strategist.",
+      `Improve GR Scale's offer and funnel for ${v.niche || 'barbershops'}. Deliver: (1) a clearer one-sentence offer; (2) headline, subheadline, and CTA copy for grscales.com; (3) 3 pricing section improvements using Starter $500 + $99/mo, Growth $750 + $299/mo, Scale $1,200 + $599/mo; (4) 5 FAQ answers; (5) a short Calendly booking pitch; (6) a Stripe payment-link close message. Keep the tone direct and beginner-friendly. Do not change the website yourself unless Gio asks.`,
+    ),
+  },
+  {
     id: 'proposal',
     label: 'Prep a Proposal',
     emoji: '📄',

@@ -126,6 +126,7 @@ const SETUP_TASKS: OSTask[] = [
   { id: 'formspree', title: 'Create Formspree lead form', description: 'Create a GR Scale form and add its ID to Vercel for gr-scale-website as NEXT_PUBLIC_FORMSPREE_ID.', status: 'Pending', priority: 'Medium', due_date: TOMORROW_ISO, created_at: new Date().toISOString() },
   { id: 'association-outreach', title: 'Send Association Barber Shop outreach', description: 'Use the dead-domain hook and offer a free 2-minute video audit. Log the send in the dashboard.', status: 'Pending', priority: 'High', due_date: TODAY_ISO, created_at: new Date().toISOString() },
   { id: 'vip-outreach', title: 'Send VIP Barbershop Tampa outreach', description: 'Use the mobile booking/call-button hook. Log the send and set the follow-up date.', status: 'Pending', priority: 'High', due_date: TODAY_ISO, created_at: new Date().toISOString() },
+  { id: 'claude-overnight', title: 'Run Claude overnight marketing prompt', description: 'Paste the Sleep Mode Claude prompt into Claude or generate Overnight Marketing Sprint from Command Center. Review outputs before anything sends.', status: 'Pending', priority: 'High', due_date: TODAY_ISO, created_at: new Date().toISOString() },
   { id: 'device-bookmarks', title: 'Add GR Scale HQ bookmarks on all devices', description: 'Bookmark dashboard, Zoho, Cloudflare, Vercel, GitHub, Stripe, Calendly, Claude, and ChatGPT on computer, laptop, and phone.', status: 'Pending', priority: 'Medium', due_date: TOMORROW_ISO, created_at: new Date().toISOString() },
 ]
 
