@@ -1,12 +1,24 @@
 'use client'
 
-/**
- * Mission Control — one-tap shortcuts to everything GR Scale.
- * Groups: My Sites / Business Tools / Marketing / Analytics.
- * Tiles marked setup:true are placeholders until Gio creates the account.
- */
-
-import { Globe, Mail, Github, Triangle, MapPin, Calendar, CreditCard, Instagram, Facebook, BarChart3, DollarSign, Phone } from 'lucide-react'
+import {
+  BarChart3,
+  Bot,
+  Calendar,
+  CreditCard,
+  DollarSign,
+  Facebook,
+  FileInput,
+  Github,
+  Globe,
+  Instagram,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Shield,
+  Triangle,
+  Zap,
+} from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -25,35 +37,51 @@ const GROUPS: { title: string; tiles: Tile[] }[] = [
     title: 'My Sites',
     tiles: [
       { label: 'grscales.com', sub: 'Main site', href: 'https://www.grscales.com', icon: Globe, color: 'text-sky-400' },
+      { label: 'Dashboard', sub: 'Private OS', href: 'https://gr-scale-os.vercel.app', icon: Shield, color: 'text-violet-400' },
       { label: 'Demo Gallery', sub: '13 niche demos', href: 'https://gr-scale-demos.vercel.app', icon: Globe, color: 'text-teal-400' },
-      { label: 'LexTheBarber', sub: 'Client · live', href: 'https://lexthebarber.com', icon: Globe, color: 'text-emerald-400' },
-      { label: 'Melo Air', sub: 'Client · live', href: 'https://meloair.net', icon: Globe, color: 'text-emerald-400' },
+      { label: 'LexTheBarber', sub: 'Proof site', href: 'https://lexthebarber.com', icon: Globe, color: 'text-emerald-400' },
     ],
   },
   {
     title: 'Business Tools',
     tiles: [
       { label: 'Zoho Mail', sub: 'gio@grscales.com', href: 'https://mail.zoho.com', icon: Mail, color: 'text-red-400' },
-      { label: 'Vercel', sub: 'Deploys & hosting', href: 'https://vercel.com/gio-rivera-s-projects', icon: Triangle, color: 'text-zinc-300' },
-      { label: 'GitHub', sub: 'gr-scale-os code', href: 'https://github.com/hayabusarivera23-ops/gr-scale-os', icon: Github, color: 'text-zinc-300' },
-      { label: 'Google Business', sub: 'Local profile', href: 'https://business.google.com', icon: MapPin, color: 'text-amber-400' },
-      { label: 'Calendly', sub: 'Set up account →', href: 'https://calendly.com/signup', icon: Calendar, color: 'text-sky-400', setup: true },
-      { label: 'Stripe', sub: 'Set up account →', href: 'https://dashboard.stripe.com/register', icon: CreditCard, color: 'text-violet-400', setup: true },
+      { label: 'Phone', sub: 'business number', href: 'https://voice.google.com', icon: Phone, color: 'text-emerald-400', setup: true },
+      { label: 'Calendly', sub: 'Free Website Audit', href: 'https://calendly.com/gio-grscales/free-website-audit-20-min', icon: Calendar, color: 'text-sky-400' },
+      { label: 'Stripe', sub: 'payment links', href: 'https://dashboard.stripe.com/payment-links', icon: CreditCard, color: 'text-violet-400', setup: true },
+      { label: 'Formspree', sub: 'lead forms', href: 'https://formspree.io', icon: FileInput, color: 'text-emerald-400', setup: true },
+      { label: 'Google Business', sub: 'verify profile', href: 'https://business.google.com', icon: MapPin, color: 'text-amber-400', setup: true },
+    ],
+  },
+  {
+    title: 'Build And Hosting',
+    tiles: [
+      { label: 'Vercel', sub: 'deploys & env vars', href: 'https://vercel.com/gio-rivera-s-projects', icon: Triangle, color: 'text-zinc-300' },
+      { label: 'GitHub', sub: 'gr-scale-os repo', href: 'https://github.com/hayabusarivera23-ops/gr-scale-os', icon: Github, color: 'text-zinc-300' },
+      { label: 'Cloudflare', sub: 'DNS & domain', href: 'https://dash.cloudflare.com', icon: Shield, color: 'text-orange-400' },
+    ],
+  },
+  {
+    title: 'AI Team',
+    tiles: [
+      { label: 'ChatGPT', sub: 'Codex + planning', href: 'https://chatgpt.com', icon: Bot, color: 'text-emerald-400' },
+      { label: 'Claude', sub: 'drafts + research', href: 'https://claude.ai', icon: MessageCircle, color: 'text-amber-400' },
+      { label: 'Dispatch Desk', sub: 'send work orders', href: '/dispatch', icon: Zap, color: 'text-sky-400', internal: true },
     ],
   },
   {
     title: 'Marketing',
     tiles: [
-      { label: 'Instagram', sub: 'Create page →', href: 'https://www.instagram.com', icon: Instagram, color: 'text-pink-400', setup: true },
-      { label: 'Facebook', sub: 'Create page →', href: 'https://www.facebook.com/pages/create', icon: Facebook, color: 'text-blue-400', setup: true },
-      { label: 'Outreach Log', sub: 'Track daily reps', href: '/outreach', icon: Phone, color: 'text-orange-400', internal: true },
+      { label: 'Instagram', sub: 'create @grscales', href: 'https://www.instagram.com', icon: Instagram, color: 'text-pink-400', setup: true },
+      { label: 'Facebook', sub: 'create page', href: 'https://www.facebook.com/pages/create', icon: Facebook, color: 'text-blue-400', setup: true },
+      { label: 'Outreach Log', sub: 'track daily reps', href: '/outreach', icon: Phone, color: 'text-orange-400', internal: true },
     ],
   },
   {
     title: 'Analytics',
     tiles: [
       { label: 'Site Analytics', sub: 'Vercel traffic', href: 'https://vercel.com/gio-rivera-s-projects/gr-scale-os/analytics', icon: BarChart3, color: 'text-teal-400' },
-      { label: 'Revenue', sub: 'Money dashboard', href: '/revenue', icon: DollarSign, color: 'text-emerald-400', internal: true },
+      { label: 'Revenue', sub: 'money dashboard', href: '/revenue', icon: DollarSign, color: 'text-emerald-400', internal: true },
     ],
   },
 ]
@@ -87,11 +115,11 @@ export default function MissionControl() {
         <span className="text-[10px] text-zinc-600 ml-auto">every shortcut, one tap</span>
       </div>
       <div className="space-y-3">
-        {GROUPS.map(g => (
-          <div key={g.title}>
-            <p className="text-[10px] font-semibold tracking-wider text-zinc-600 uppercase mb-1.5">{g.title}</p>
+        {GROUPS.map(group => (
+          <div key={group.title}>
+            <p className="text-[10px] font-semibold tracking-wider text-zinc-600 uppercase mb-1.5">{group.title}</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {g.tiles.map(t => <TileCard key={t.label} t={t} />)}
+              {group.tiles.map(tile => <TileCard key={tile.label} t={tile} />)}
             </div>
           </div>
         ))}

@@ -16,7 +16,7 @@
 export const BUSINESS_CONTEXT = `BUSINESS CONTEXT — GR Scale (read this first, it is everything you need):
 - GR Scale is Gio Rivera's web agency: websites for local service businesses, nationwide. Site: grscales.com · Email: gio@grscales.com · Phone: (813) 869-5917.
 - Packages: Starter $99/mo (hosting, updates, edits, backups) · Growth $299/mo (adds local SEO, Google Business Profile, monthly reports) · Scale $599+/mo (adds advanced SEO, landing pages, AI chatbot, reputation management, lead tracking). One-time build fee $500-750.
-- Proof to show prospects: meloair.net (real HVAC client site), lexthebarber.com (real barber client site), and 13 live niche demos at gr-scale-demos.vercel.app (hvac, roofing, plumbing, electrician, pest-control, cleaning, painting, flooring, tree-service, pressure-washing, landscaping, restaurant, barber).
+- Proof to show prospects: lexthebarber.com (real barber client site), and 13 live niche demos at gr-scale-demos.vercel.app (hvac, roofing, plumbing, electrician, pest-control, cleaning, painting, flooring, tree-service, pressure-washing, landscaping, restaurant, barber).
 - GR Scale uses a supervised AI workflow: lead scan, audit, pitch drafts, approval queue, Zoho Mail sending, reply scan, weekly content, and site health checks. Nothing sends until Gio approves it.
 - Mission Control dashboard lives in the GitHub repo hayabusarivera23-ops/gr-scale-os. Claude's state files there: src/lib/store.ts (CRM seed — bump the localStorage KEY version when the seed changes) and src/lib/activity.ts (Claude's logbook — prepend an entry every work session).
 - HARD RULE: never send anything to a business yourself. Produce drafts for Gio's approval only.`
@@ -104,7 +104,7 @@ export const COMMANDS: CommandDef[] = [
     inputs: [],
     build: () => assemble(
       "GR Scale's content team.",
-      `Produce this week's content batch for GR Scale (same scope as the Sunday 5pm content factory job): (1) 3 short social posts targeting local service business owners (pain-point driven, one proof link each — meloair.net, lexthebarber.com, or a niche demo); (2) 1 short blog/LinkedIn article on why local businesses lose customers to bad websites; (3) 2 cold-outreach email variations to A/B test this week. Match GR Scale's voice: direct, specific, zero fluff, always tied to phone calls and revenue. Save the drafts where Gio can review them — do NOT publish or send anything.`,
+      `Produce this week's content batch for GR Scale (same scope as the Sunday 5pm content factory job): (1) 3 short social posts targeting local service business owners (pain-point driven, one proof link each — lexthebarber.com or a niche demo); (2) 1 short blog/LinkedIn article on why local businesses lose customers to bad websites; (3) 2 cold-outreach email variations to A/B test this week. Match GR Scale's voice: direct, specific, zero fluff, always tied to phone calls and revenue. Save the drafts where Gio can review them — do NOT publish or send anything.`,
     ),
   },
   {
@@ -161,7 +161,7 @@ export function buildFreeformPrompt(request: string): string {
 export function buildHealthCheckPrompt(): string {
   return assemble(
     "GR Scale's systems auditor.",
-    `Run a full health check and report status for each item: (1) grscales.com — loads fast, mobile OK, contact info correct ((813) 869-5917 / gio@grscales.com), no broken links; (2) gio@grscales.com — Zoho Mail receiving and sending correctly; (3) client sites meloair.net and lexthebarber.com — up and error-free; (4) the 13 demos at gr-scale-demos.vercel.app — all loading; (5) supervised workflow — lead scan, reply scan, content factory, and site health checks are ready or running with real dates. Give Gio a pass/fail per item with dates, fix what you can, and sync src/lib/activity.ts in the gr-scale-os repo so the dashboard reflects this check.`,
+    `Run a full health check and report status for each item: (1) grscales.com — loads fast, mobile OK, contact info correct ((813) 869-5917 / gio@grscales.com), no broken links; (2) gio@grscales.com — Zoho Mail receiving and sending correctly; (3) lexthebarber.com — up and error-free; (4) the 13 demos at gr-scale-demos.vercel.app — all loading; (5) supervised workflow — lead scan, reply scan, content factory, and site health checks are ready or running with real dates. Give Gio a pass/fail per item with dates, fix what you can, and sync src/lib/activity.ts in the gr-scale-os repo so the dashboard reflects this check.`,
   )
 }
 
