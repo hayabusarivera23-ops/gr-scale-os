@@ -24,6 +24,18 @@ export interface ActivityEntry {
 
 export const ACTIVITY: ActivityEntry[] = [
   {
+    date: '2026-07-28',
+    category: 'content',
+    title: 'Sleep Mode marketing system prepared',
+    detail: 'Added GR Scale marketing command prompts for Overnight Marketing Sprint, Barber Outreach Pack, Social Content Machine, and Offer + Funnel Copy. Created local prompt and morning marketing kit files for Gio to use before outreach.',
+  },
+  {
+    date: '2026-07-28',
+    category: 'system',
+    title: 'Remote dashboard command center upgraded',
+    detail: 'Upgraded Mission Control with remote sync support, setup tasks, daily stats/goals, business tool shortcuts, and current barber-first priorities. Verified the protected live dashboard opens with the saved login.',
+  },
+  {
     date: '2026-07-12',
     category: 'build',
     title: 'grscales.com upgraded with FX v3 — deployed to production',
