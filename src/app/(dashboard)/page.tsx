@@ -17,13 +17,14 @@
  */
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import {
   Phone, ChevronRight, DollarSign, Target,
-  Zap, Users, FileText, Building2, Flag, Cloud, Smartphone, Monitor,
+  Zap, Users, FileText, Building2, Flag,
 } from 'lucide-react'
 import { cn, formatCurrency } from '@/lib/utils'
 import { toStage, closestToPaying, revenueOpportunity, buildWorkQueue } from '@/lib/workflow'
-import { useOS, type CloudSyncStatus } from '@/lib/store'
+import { useOS } from '@/lib/store'
 import { PACKAGES } from '@/lib/packages'
 import { DEMOS_LIVE_COUNT, highestValueDemo } from '@/lib/demos'
 import SystemStatus from '@/components/dashboard/SystemStatus'
@@ -34,6 +35,14 @@ import CommandQueue from '@/components/dashboard/CommandQueue'
 import ActivityFeed from '@/components/dashboard/ActivityFeed'
 import AIEmployees from '@/components/dashboard/AIEmployees'
 import MissionControl from '@/components/dashboard/MissionControl'
+import HvacPipeline from '@/components/dashboard/HvacPipeline'
+import ApprovalQueue from '@/components/dashboard/ApprovalQueue'
+import BusinessLaunchCockpit from '@/components/dashboard/BusinessLaunchCockpit'
+import SeoGrowthConsole from '@/components/dashboard/SeoGrowthConsole'
+import BusinessActionConsole from '@/components/dashboard/BusinessActionConsole'
+import ReferralTracker from '@/components/dashboard/ReferralTracker'
+import TomorrowBusinessReadiness from '@/components/dashboard/TomorrowBusinessReadiness'
+import DailyPromptsCard from '@/components/shared/DailyPromptsCard'
 
 // ─── Metric card ──────────────────────────────────────────────────────────────
 
@@ -58,53 +67,6 @@ function Metric({ label, value, sub, icon: Icon, color, href }: {
 }
 
 // ─── Question card (unchanged design) ────────────────────────────────────────
-
-function RemoteControlCard({ status }: { status: CloudSyncStatus }) {
-  const copy = {
-    checking: {
-      label: 'Checking sync',
-      detail: 'Dashboard is checking whether Vercel has the GitHub token.',
-      dot: 'bg-amber-400',
-    },
-    connected: {
-      label: 'Remote sync on',
-      detail: 'Goals, stats, commands, and lead updates can follow you across phone, laptop, and computer.',
-      dot: 'bg-emerald-400',
-    },
-    local: {
-      label: 'Local mode',
-      detail: 'Add GITHUB_TOKEN in Vercel to sync dashboard changes across every device.',
-      dot: 'bg-amber-400',
-    },
-    error: {
-      label: 'Sync needs attention',
-      detail: 'The dashboard still works here, but the remote save failed. Check the Vercel token.',
-      dot: 'bg-red-400',
-    },
-  }[status]
-
-  return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-5 py-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sky-500/25 bg-sky-500/10">
-          <Cloud className="h-5 w-5 text-sky-400" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className={`h-2 w-2 rounded-full ${copy.dot}`} />
-            <p className="text-sm font-black text-zinc-100">{copy.label}</p>
-          </div>
-          <p className="text-xs text-zinc-500 mt-0.5">{copy.detail}</p>
-        </div>
-        <div className="flex items-center gap-2 text-zinc-500">
-          <Monitor className="h-4 w-4" />
-          <Smartphone className="h-4 w-4" />
-          <span className="text-[10px] font-bold uppercase tracking-widest">3 devices</span>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function QuestionCard({
   number, question, children, href, cta,
@@ -151,13 +113,18 @@ function QuestionCard({
 export default function DashboardPage() {
   const {
     data, metrics, ready,
-    addCommand, setCommandStatus, deleteCommand, setScoreboard, confirmSystem, cloudSyncStatus,
+    addCommand, setCommandStatus, deleteCommand, setScoreboard, confirmSystem,
   } = useOS()
+  const [todayLine, setTodayLine] = useState({ greeting: 'Welcome back', today: 'Today' })
 
-  const now = new Date()
-  const hour = now.getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const today = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+  useEffect(() => {
+    const now = new Date()
+    const hour = now.getHours()
+    setTodayLine({
+      greeting: hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening',
+      today: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+    })
+  }, [])
 
   const LEADS = data.leads
   const activeLeads = LEADS.filter(l => !['Won', 'Lost'].includes(l.status))
@@ -175,13 +142,39 @@ export default function DashboardPage() {
   if (!ready) return <div className="text-sm text-zinc-600 p-4">Loading…</div>
 
   return (
-    <div className="space-y-4 max-w-3xl">
+    <div className="space-y-4 max-w-6xl">
 
       {/* Greeting */}
       <div className="pb-1">
-        <h2 className="text-xl font-bold text-zinc-100">{greeting}, Gio.</h2>
-        <p className="text-sm text-zinc-600 mt-0.5">{today} · Mission Control — everything Claude runs for GR Scale.</p>
+        <h2 className="text-xl font-bold text-zinc-100">{todayLine.greeting}, Gio.</h2>
+        <p className="text-sm text-zinc-600 mt-0.5">{todayLine.today} - visibility business, first customer, approvals, employees, and daily execution.</p>
       </div>
+
+      <BusinessLaunchCockpit />
+
+      <DailyPromptsCard scope="business" />
+
+      <TomorrowBusinessReadiness />
+
+      <SeoGrowthConsole />
+
+      <BusinessActionConsole />
+
+      <ReferralTracker />
+
+      <HvacPipeline />
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <Metric label="Sends Today" value={`${data.settings.scoreboard.sent}/10`} sub="daily KPI" icon={Phone} color="text-sky-400" href="/workspace" />
+        <Metric label="Replies" value={String(data.settings.scoreboard.replies)} sub="today" icon={Users} color="text-emerald-400" href="/inbox" />
+        <Metric label="Calls Booked" value={String(data.settings.scoreboard.meetings)} sub="audit calls" icon={Target} color="text-violet-400" href="/pipeline" />
+        <Metric label="Proposals Out" value={String(metrics.proposalsWaiting)} sub="waiting" icon={FileText} color={metrics.proposalsWaiting > 0 ? 'text-amber-400' : 'text-zinc-400'} href="/proposals" />
+        <Metric label="MRR" value={formatCurrency(metrics.mrr)} sub="recurring" icon={DollarSign} color={metrics.mrr > 0 ? 'text-emerald-400' : 'text-red-400'} href="/revenue" />
+      </div>
+
+      <AIEmployees scope="business" />
+
+      <ApprovalQueue />
 
       {/* System Status strip */}
       <SystemStatus confirmations={data.settings.system_confirmations} onConfirm={confirmSystem} />
@@ -189,11 +182,7 @@ export default function DashboardPage() {
       {/* Mission Control — one-tap shortcuts to every site & tool */}
       <MissionControl />
 
-      <RemoteControlCard status={cloudSyncStatus} />
-
       {/* AI Employees — the staff roster + live dispatch desk */}
-      <AIEmployees />
-
       {/* Scoreboard — the daily numbers */}
       <Scoreboard scoreboard={data.settings.scoreboard} onChange={setScoreboard} />
 
@@ -205,7 +194,7 @@ export default function DashboardPage() {
               <Flag className="h-4 w-4 text-sky-400" />
               <p className="text-[10px] font-black tracking-widest text-sky-500 uppercase">Today&apos;s Mission</p>
             </div>
-            <p className="text-sm font-bold text-zinc-100">{data.settings.todays_mission}</p>
+            <p className="text-sm font-bold text-zinc-100">Profit first. HVAC pipeline, safe training, meals, faith, and agent approvals all connect here.</p>
           </div>
           <div className="flex gap-2">
             <Link href="/today"
