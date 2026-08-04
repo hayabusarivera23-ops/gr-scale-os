@@ -1,13 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Bell, Search, Menu, X } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import Sidebar from './Sidebar'
 
 const PAGE_TITLES: Record<string, string> = {
   '/start-here': 'Start Here',
+  '/today':      'Today Mission',
   '/':           'Founder Dashboard',
+  '/agents':     'AI Employees',
+  '/gio':        'Gio OS',
   '/inbox':      'Lead Inbox',
   '/queue':      'Work Queue',
   '/workspace':  'Outreach Workspace',
@@ -30,14 +34,26 @@ const PAGE_TITLES: Record<string, string> = {
 export default function Header() {
   const pathname = usePathname()
   const [navOpen, setNavOpen] = useState(false)
+  const [clock, setClock] = useState({ date: 'Today', time: '--:--' })
   const title = PAGE_TITLES[pathname] ?? PAGE_TITLES[Object.keys(PAGE_TITLES).find(k => pathname.startsWith(k) && k !== '/') ?? '/'] ?? 'GR Scale OS'
 
   // Close the mobile drawer whenever navigation happens
   useEffect(() => { setNavOpen(false) }, [pathname])
 
-  const now = new Date()
-  const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-  const date = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  useEffect(() => {
+    function tick() {
+      const now = new Date()
+      setClock({
+        time: now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        date: now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+      })
+    }
+    tick()
+    const timer = window.setInterval(tick, 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const { date, time } = clock
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-zinc-800/80 bg-[#0a0a0b]/95 px-4 md:px-6 backdrop-blur">
@@ -65,6 +81,12 @@ export default function Header() {
       )}
 
       <div className="flex items-center gap-3">
+        <Link href="/portal" className="hidden md:inline-flex rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-xs font-semibold text-zinc-400 hover:text-zinc-100">
+          Portal
+        </Link>
+        <Link href="/gio" className="inline-flex rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-3 py-1.5 text-xs font-black text-cyan-200 hover:border-cyan-300 hover:bg-cyan-300 hover:text-black">
+          Gio OS
+        </Link>
         <div className="hidden md:flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-sm text-zinc-500">
           <Search className="h-3.5 w-3.5" />
           <span className="text-xs">Search...</span>
