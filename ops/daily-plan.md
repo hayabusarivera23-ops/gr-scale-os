@@ -1,2 +1,2 @@
 # 2026-08-04
-Plan loads here each morning.
+Tuesday, Aug 4. Skill + mobility day: 20 min shadow wrestling (stance, shots, sprawls), 15 min hip and shoulder mobility, light band work. Practice 6-8p — focus on clean technique, not just going hard. Food: eggs + oatmeal breakfast, chicken/rice/veggies lunch, PB sandwich + milk after school, big dinner + Greek yogurt before bed — about 3,000 cal, 150g protein. Creatine with a meal. Weigh in first thing this morning and sip your gallon through the whole day. Reply with how you slept / feel / what you did — I'll adjust and remember.
