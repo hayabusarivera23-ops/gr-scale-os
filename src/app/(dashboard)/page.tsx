@@ -172,7 +172,7 @@ export default function DashboardPage() {
         <Metric label="MRR" value={formatCurrency(metrics.mrr)} sub="recurring" icon={DollarSign} color={metrics.mrr > 0 ? 'text-emerald-400' : 'text-red-400'} href="/revenue" />
       </div>
 
-      <AIEmployees scope="business" />
+      <AIEmployees />
 
       <ApprovalQueue />
 
