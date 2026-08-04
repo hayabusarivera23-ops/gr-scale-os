@@ -39,6 +39,8 @@ const WORKOUT_SETS_KEY = 'gio-os-workout-sets-v1'
 const CLAUDE_RESULTS_KEY = 'gio-os-claude-results-v1'
 const WORKOUT_DONE_KEY = 'gio-os-workout-done-v1'
 const PERSONAL_SYNC_PREF_KEY = 'gio-os-personal-sync-pref-v1'
+const DAILY_PLAN_KEY = 'gio-os-simple-daily-plan-v1'
+const DAILY_PLAN_RAW_URL = 'https://raw.githubusercontent.com/hayabusarivera23-ops/gr-scale-os/main/ops/daily-plan.md'
 
 type Mode = 'Gym' | 'Home' | 'Recovery'
 type Focus = 'Mission' | 'Train' | 'Eat' | 'Track' | 'Faith' | 'Claude'
@@ -437,6 +439,24 @@ function InputField({
   )
 }
 
+function SimplePlanText({ text }: { text: string }) {
+  const lines = text.split(/\r?\n/).filter(line => line.trim())
+  return (
+    <div className="space-y-3">
+      {lines.map((line, index) => {
+        const clean = line.replace(/^#+\s*/, '').trim()
+        if (line.startsWith('#')) {
+          return <h2 key={`${line}-${index}`} className="text-2xl font-black tracking-tight text-slate-950">{clean}</h2>
+        }
+        if (/^[-*]\s+/.test(line)) {
+          return <p key={`${line}-${index}`} className="rounded-2xl bg-white/70 px-4 py-3 text-lg font-bold leading-relaxed text-slate-800">{line.replace(/^[-*]\s+/, '')}</p>
+        }
+        return <p key={`${line}-${index}`} className="text-xl font-semibold leading-relaxed text-slate-800">{clean}</p>
+      })}
+    </div>
+  )
+}
+
 function groceryNeeds(groceries: string) {
   const lower = groceries.toLowerCase()
   const needs = []
@@ -733,6 +753,10 @@ export default function GioDashboardPage() {
   const [unlocked, setUnlocked] = useState(true)
   const [passcode, setPasscode] = useState('')
   const [focus, setFocus] = useState<Focus>('Mission')
+  const [showMore, setShowMore] = useState(false)
+  const [dailyPlan, setDailyPlan] = useState('')
+  const [dailyPlanPaste, setDailyPlanPaste] = useState('')
+  const [dailyPlanStatus, setDailyPlanStatus] = useState('Loading today plan...')
   const [mode, setMode] = useState<Mode>('Gym')
   const [minutes, setMinutes] = useState('45')
   const [other, setOther] = useState('')
@@ -878,6 +902,43 @@ export default function GioDashboardPage() {
       setGroceries(groceryTextFromDefaults())
       setGroceryStock(defaultGroceryStock())
     }
+  }, [])
+
+  useEffect(() => {
+    const today = todayIso()
+    const saved = localStorage.getItem(DAILY_PLAN_KEY) || ''
+    if (saved.startsWith(`# ${today}`)) {
+      setDailyPlan(saved)
+      setDailyPlanPaste(saved)
+      setDailyPlanStatus('Loaded saved plan.')
+    }
+
+    fetch(`${DAILY_PLAN_RAW_URL}?t=${Date.now()}`, { cache: 'no-store' })
+      .then(response => {
+        if (!response.ok) throw new Error('Plan fetch failed')
+        return response.text()
+      })
+      .then(text => {
+        if (!text.trim().startsWith(`# ${today}`)) {
+          if (!saved.startsWith(`# ${today}`)) {
+            setDailyPlan('')
+            setDailyPlanPaste(saved)
+            setDailyPlanStatus(`Plan file is stale. Paste today's Claude plan for ${today}.`)
+          }
+          return
+        }
+        setDailyPlan(text)
+        setDailyPlanPaste(text)
+        setDailyPlanStatus('Today plan loaded.')
+        localStorage.setItem(DAILY_PLAN_KEY, text)
+      })
+      .catch(() => {
+        if (!saved.startsWith(`# ${today}`)) {
+          setDailyPlan('')
+          setDailyPlanPaste(saved)
+          setDailyPlanStatus(`Could not load today plan. Paste Claude's plan for ${today}.`)
+        }
+      })
   }, [])
 
   useEffect(() => {
@@ -1453,6 +1514,29 @@ export default function GioDashboardPage() {
     try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(next)) } catch { /* local only */ }
   }
 
+  function savePastedDailyPlan() {
+    const text = dailyPlanPaste.trim()
+    if (!text) return
+    const today = todayIso()
+    const normalized = text.startsWith('#') ? text : `# ${today}\n${text}`
+    setDailyPlan(normalized)
+    setDailyPlanPaste(normalized)
+    setDailyPlanStatus('Pasted plan saved.')
+    try { localStorage.setItem(DAILY_PLAN_KEY, normalized) } catch { /* local only */ }
+  }
+
+  function simpleWorkoutDone() {
+    finishWorkoutSession()
+    setCoachPulse('Workout marked done from Simple Mode.')
+  }
+
+  function openSimpleFoodLog() {
+    setShowMore(true)
+    setFocus('Eat')
+    openFoodSheet('Breakfast')
+    window.setTimeout(() => document.getElementById('eat')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
+  }
+
   const completedActions = DAILY_ACTIONS.filter(item => checklist[`${dayKey}-${item.id}`]).length
   const allDailyActionsDone = completedActions === DAILY_ACTIONS.length
   const tomorrowReadyDone = TOMORROW_READY_ACTIONS.filter(item => checklist[`${dayKey}-tomorrow-${item.id}`]).length
@@ -1493,6 +1577,93 @@ export default function GioDashboardPage() {
     )
   }
 
+  if (!showMore) {
+    return (
+      <main className="min-h-screen bg-[#f3f0e8] px-4 py-5 text-slate-950">
+        <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-2xl flex-col">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Gio OS</p>
+              <h1 className="text-3xl font-black tracking-tight">Today</h1>
+            </div>
+            <Link href="/" className="rounded-full border border-slate-300 bg-white/60 px-4 py-2 text-xs font-black text-slate-600">
+              Business
+            </Link>
+          </div>
+
+          <section className="flex-1 rounded-[28px] border border-slate-200 bg-[#fffdf7] p-5 shadow-2xl shadow-slate-200/70">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-slate-500">{currentDay.weekday || weekdayName()} - {dayKey}</p>
+                <p className="mt-1 text-xs font-bold text-slate-400">{dailyPlanStatus}</p>
+              </div>
+              <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-black text-cyan-900">
+                Coach note
+              </span>
+            </div>
+
+            {dailyPlan ? (
+              <SimplePlanText text={dailyPlan} />
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xl font-black leading-tight text-slate-900">Paste today&apos;s plan from Claude.</p>
+                <textarea
+                  value={dailyPlanPaste}
+                  onChange={event => setDailyPlanPaste(event.target.value)}
+                  placeholder={`# ${dayKey}\nPaste today's plan here...`}
+                  className="min-h-72 w-full resize-none rounded-3xl border border-slate-200 bg-white p-4 text-lg font-semibold leading-relaxed text-slate-800 outline-none placeholder:text-slate-300 focus:border-cyan-300"
+                />
+                <button onClick={savePastedDailyPlan} className="h-14 w-full rounded-2xl bg-slate-950 text-base font-black text-white">
+                  Save Today Plan
+                </button>
+              </div>
+            )}
+          </section>
+
+          <section className="mt-4 grid gap-3">
+            <label className="rounded-3xl border border-slate-200 bg-white/75 p-4 shadow-lg shadow-slate-200/50">
+              <span className="text-sm font-black text-slate-500">Weigh in</span>
+              <input
+                value={todayLog.weight || ''}
+                onChange={event => {
+                  updateLog({ weight: event.target.value })
+                  if (event.target.value.trim()) toggleAction('weigh')
+                }}
+                inputMode="decimal"
+                placeholder="Enter weight"
+                className="mt-1 w-full bg-transparent text-4xl font-black text-slate-950 outline-none placeholder:text-slate-300"
+              />
+            </label>
+
+            <button
+              onClick={simpleWorkoutDone}
+              className={cn(
+                'h-20 rounded-3xl text-lg font-black shadow-lg transition',
+                checklist[`${dayKey}-train`] ? 'bg-emerald-300 text-emerald-950 shadow-emerald-200/70' : 'bg-slate-950 text-white shadow-slate-300/70'
+              )}
+            >
+              {checklist[`${dayKey}-train`] ? 'Workout done' : 'Did my workout'}
+            </button>
+
+            <button
+              onClick={openSimpleFoodLog}
+              className="h-20 rounded-3xl bg-cyan-300 text-lg font-black text-slate-950 shadow-lg shadow-cyan-200/70"
+            >
+              Log food
+            </button>
+          </section>
+
+          <div className="mt-5 flex items-center justify-between gap-3 pb-2">
+            <p className="text-sm font-black text-slate-500">Streak: {checkInStreak} check-ins - {workoutStreak} workouts</p>
+            <button onClick={() => setShowMore(true)} className="rounded-full border border-slate-300 bg-white/70 px-5 py-3 text-sm font-black text-slate-700">
+              More
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-[#06080c] text-white">
       <div className="sticky top-0 z-30 border-b border-white/10 bg-[#06080c]/90 backdrop-blur-xl">
@@ -1522,6 +1693,9 @@ export default function GioDashboardPage() {
             ))}
           </nav>
           <div className="flex gap-2">
+            <button onClick={() => setShowMore(false)} className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs font-bold text-cyan-100 hover:bg-cyan-300/15">
+              Simple
+            </button>
             <Link href="/portal" className="rounded-full border border-white/10 px-3 py-2 text-xs font-bold text-white/60 hover:text-white">Portal</Link>
             <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-2 text-xs font-bold text-sky-200">
               <BriefcaseBusiness className="h-4 w-4" /> GR Scale OS
