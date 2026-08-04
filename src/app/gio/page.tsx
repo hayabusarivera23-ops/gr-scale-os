@@ -42,6 +42,7 @@ const PERSONAL_SYNC_PREF_KEY = 'gio-os-personal-sync-pref-v1'
 
 type Mode = 'Gym' | 'Home' | 'Recovery'
 type Focus = 'Mission' | 'Train' | 'Eat' | 'Track' | 'Faith' | 'Claude'
+type FoodAddTab = 'Staples' | 'Combos' | 'Recent' | 'Custom'
 
 interface FoodLookup {
   name: string
@@ -118,6 +119,14 @@ const BODYWEIGHT_TESTS = [
   'Sprint/bike intervals',
   'Mobility minutes',
 ]
+
+const MEAL_SECTIONS = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'] as const
+
+const MACRO_TARGETS = {
+  protein: 150,
+  carbs: 330,
+  fat: 90,
+}
 
 const CLAUDE_WORK_LANE = [
   {
@@ -324,8 +333,28 @@ function Section({
 }
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+  const [tapCount, setTapCount] = useState(0)
+
+  function handleCardTap(event: React.MouseEvent<HTMLDivElement>) {
+    const target = event.target as HTMLElement
+    if (target.closest('button, a, input, textarea, select, video')) return
+    setTapCount(current => current + 1)
+  }
+
   return (
-    <div className={cn('rounded-2xl border border-white/10 bg-white/[0.045] p-4 shadow-xl shadow-black/10', className)}>
+    <div
+      onClick={handleCardTap}
+      className={cn(
+        'relative rounded-2xl border border-white/10 bg-white/[0.045] p-4 shadow-xl shadow-black/10 transition',
+        tapCount > 0 && 'ring-1 ring-cyan-300/30',
+        className
+      )}
+    >
+      {tapCount > 0 && (
+        <span className="pointer-events-none absolute right-3 top-3 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-100">
+          Active {tapCount}
+        </span>
+      )}
       {children}
     </div>
   )
@@ -457,6 +486,20 @@ function foodTotals(entries: FoodEntry[]) {
     carbs: roundMacro(totals.carbs + entry.carbs),
     fat: roundMacro(totals.fat + entry.fat),
   }), { calories: 0, protein: 0, carbs: 0, fat: 0 })
+}
+
+function mealNameForDiary(meal: string) {
+  const lower = meal.toLowerCase()
+  if (lower.includes('breakfast')) return 'Breakfast'
+  if (lower.includes('lunch') || lower.includes('pre-workout')) return 'Lunch'
+  if (lower.includes('dinner')) return 'Dinner'
+  return 'Snacks'
+}
+
+function yesterdayIso(dateIso: string) {
+  const date = dateIso ? new Date(`${dateIso}T00:00:00`) : new Date()
+  date.setDate(date.getDate() - 1)
+  return date.toISOString().slice(0, 10)
 }
 
 function workoutSetSummary(sets: WorkoutSetEntry[]) {
@@ -702,6 +745,7 @@ export default function GioDashboardPage() {
   const [todayLog, setTodayLog] = useState<DailyGrowthLog>({ date: '' })
   const [plan, setPlan] = useState('7:30 wake, weigh in, breakfast, gym, mobility, meals, faith journal, sleep.')
   const [checklist, setChecklist] = useState<Record<string, boolean>>({})
+  const [waterHistory, setWaterHistory] = useState<Record<string, number>>({})
   const [barcode, setBarcode] = useState('')
   const [barcodeName, setBarcodeName] = useState('')
   const [barcodeServing, setBarcodeServing] = useState('')
@@ -714,6 +758,10 @@ export default function GioDashboardPage() {
   const [selectedFood, setSelectedFood] = useState(QUICK_FOOD_MACROS[0].name)
   const [foodGrams, setFoodGrams] = useState('100')
   const [foodMeal, setFoodMeal] = useState('Meal')
+  const [foodSheetOpen, setFoodSheetOpen] = useState(false)
+  const [foodAddTab, setFoodAddTab] = useState<FoodAddTab>('Staples')
+  const [foodSearch, setFoodSearch] = useState('')
+  const [editingFoodId, setEditingFoodId] = useState('')
   const [customFoodName, setCustomFoodName] = useState('')
   const [customCalories, setCustomCalories] = useState('')
   const [customProtein, setCustomProtein] = useState('')
@@ -721,6 +769,10 @@ export default function GioDashboardPage() {
   const [customFat, setCustomFat] = useState('')
   const [groceryStock, setGroceryStock] = useState<Record<string, boolean>>({})
   const [workoutSets, setWorkoutSets] = useState<WorkoutSetEntry[]>([])
+  const [activeWorkoutStep, setActiveWorkoutStep] = useState(0)
+  const [restSeconds, setRestSeconds] = useState(0)
+  const [swappedSteps, setSwappedSteps] = useState<Record<string, string>>({})
+  const [sessionCelebration, setSessionCelebration] = useState(false)
   const [setExercise, setSetExercise] = useState('')
   const [setWeight, setSetWeight] = useState('')
   const [setReps, setSetReps] = useState('')
@@ -728,6 +780,8 @@ export default function GioDashboardPage() {
   const [coachPulse, setCoachPulse] = useState('Waiting for your next log.')
   const [coachQuestion, setCoachQuestion] = useState('')
   const [coachAnswer, setCoachAnswer] = useState('')
+  const [trackRange, setTrackRange] = useState<'7' | '30'>('7')
+  const [selectedTrackDate, setSelectedTrackDate] = useState('')
   const [claudeResults, setClaudeResults] = useState('')
   const [workoutDone, setWorkoutDone] = useState<Record<string, boolean>>({})
   const [personalSyncMode, setPersonalSyncMode] = useState<'local' | 'cloud-ready'>('local')
@@ -767,8 +821,20 @@ export default function GioDashboardPage() {
   const dayKey = currentDay.iso || 'today'
   const todaysFoodEntries = foodEntries.filter(entry => entry.date === dayKey)
   const macroTotals = foodTotals(todaysFoodEntries)
-  const trueProtein = Math.max(protein, Math.round(macroTotals.protein))
   const workoutCompletion = workoutCompletionForToday(todayGymPlan, workoutDone, dayKey)
+  const currentWorkoutStep = workoutStepLabel(Math.min(activeWorkoutStep, Math.max(0, todayGymPlan.plan.length - 1)))
+  const exerciseCalories = workoutCompletion >= 90 ? 250 : workoutCompletion >= 50 ? 125 : 0
+  const calorieGoal = 2900
+  const caloriesRemaining = calorieGoal - macroTotals.calories + exerciseCalories
+  const caloriePct = Math.min(100, Math.round(((macroTotals.calories - exerciseCalories) / calorieGoal) * 100))
+  const diaryByMeal = MEAL_SECTIONS.reduce<Record<string, FoodEntry[]>>((acc, meal) => {
+    acc[meal] = todaysFoodEntries.filter(entry => mealNameForDiary(entry.meal) === meal)
+    return acc
+  }, {})
+  const recentFoods = Array.from(new Map(foodEntries.map(entry => [entry.name, entry])).values()).slice(0, 20)
+  const filteredStaples = QUICK_FOOD_MACROS.filter(food => food.name.toLowerCase().includes(foodSearch.toLowerCase()))
+  const filteredRecent = recentFoods.filter(food => food.name.toLowerCase().includes(foodSearch.toLowerCase()))
+  const trueProtein = Math.max(protein, Math.round(macroTotals.protein))
   const coachSignals = adaptiveCoachSignals({
     log: todayLog,
     readiness,
@@ -783,6 +849,8 @@ export default function GioDashboardPage() {
   const todaysWorkoutSets = workoutSets.filter(entry => entry.date === dayKey)
   const setSummary = workoutSetSummary(todaysWorkoutSets)
   const groceryCombos = groceryMealCombos(groceryStock)
+  const trackLogs = logs.slice(0, trackRange === '7' ? 7 : 30).reverse()
+  const selectedTrackLog = logs.find(log => log.date === selectedTrackDate) || todayLog
 
   useEffect(() => {
     const day = { iso: todayIso(), weekday: weekdayName() }
@@ -793,6 +861,7 @@ export default function GioDashboardPage() {
       setLogs(savedLogs)
       setTodayLog(savedLogs.find(log => log.date === day.iso) || { date: day.iso })
       const water = JSON.parse(localStorage.getItem(WATER_KEY) || '{}') as Record<string, number>
+      setWaterHistory(water)
       setWaterDone(water[day.iso] || 0)
       const proteinData = JSON.parse(localStorage.getItem(PROTEIN_KEY) || '{}') as Record<string, number>
       setProteinBlocks(proteinData[day.iso] || 0)
@@ -840,6 +909,14 @@ export default function GioDashboardPage() {
       if (cloudToday) setTodayLog(prev => ({ ...prev, ...cloudToday }))
     })
   }, [dayKey, memoryUserEmail, personalSyncMode])
+
+  useEffect(() => {
+    if (restSeconds <= 0) return
+    const timer = window.setInterval(() => {
+      setRestSeconds(current => Math.max(0, current - 1))
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [restSeconds])
 
   useEffect(() => {
     if (!scannerActive) return
@@ -1106,6 +1183,48 @@ export default function GioDashboardPage() {
     setCoachPulse(`${preset.label} logged: ${totals.calories} cal, ${totals.protein}g protein. ${preset.note}`)
   }
 
+  function openFoodSheet(meal: string, tab: FoodAddTab = 'Staples') {
+    setFoodMeal(meal)
+    setFoodAddTab(tab)
+    setFoodSheetOpen(true)
+  }
+
+  function relogFood(entry: FoodEntry, meal = foodMeal) {
+    const base = QUICK_FOOD_MACROS.find(food => food.name === entry.name)
+    const next = base
+      ? macroEntry(base, entry.grams, meal, dayKey)
+      : { ...entry, id: `food-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, date: dayKey, meal }
+    saveFoodEntries([next, ...foodEntries])
+    setCoachPulse(`Re-logged ${next.name} to ${meal}. Diary updated.`)
+  }
+
+  function copyYesterdayMeal(meal: string) {
+    const yesterday = yesterdayIso(dayKey)
+    const entries = foodEntries.filter(entry => entry.date === yesterday && mealNameForDiary(entry.meal) === meal)
+    if (!entries.length) {
+      setCoachPulse(`No ${meal.toLowerCase()} entries found yesterday.`)
+      return
+    }
+    const copied = entries.map(entry => ({
+      ...entry,
+      id: `food-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      date: dayKey,
+      meal,
+    }))
+    saveFoodEntries([...copied, ...foodEntries])
+    setCoachPulse(`Copied yesterday's ${meal.toLowerCase()} into today.`)
+  }
+
+  function updateFoodGrams(entry: FoodEntry, grams: number) {
+    if (!Number.isFinite(grams) || grams <= 0) return
+    const base = QUICK_FOOD_MACROS.find(food => food.name === entry.name)
+    const updated = base
+      ? macroEntry(base, grams, entry.meal, entry.date)
+      : { ...entry, grams: Math.round(grams) }
+    saveFoodEntries(foodEntries.map(item => item.id === entry.id ? { ...updated, id: entry.id } : item))
+    setCoachPulse(`${entry.name} updated to ${Math.round(grams)}g.`)
+  }
+
   function removeFoodEntry(id: string) {
     saveFoodEntries(foodEntries.filter(entry => entry.id !== id))
     setCoachPulse('Food entry removed. Totals recalculated.')
@@ -1138,6 +1257,57 @@ export default function GioDashboardPage() {
     updateLog({ workout: `${todayLog.workout ? `${todayLog.workout}\n` : ''}${entry.exercise}: ${entry.weight} x ${entry.reps}, RPE ${entry.rpe}` })
     setSetReps('')
     setCoachPulse(workoutSetSummary(next.filter(set => set.date === dayKey)).signal)
+  }
+
+  function workoutStepLabel(index: number) {
+    const step = todayGymPlan.plan[index] || todayGymPlan.plan[0] || 'Workout step'
+    return swappedSteps[`${dayKey}-${todayGymPlan.day}-${index}`] || step
+  }
+
+  function logCurrentWorkoutSet() {
+    const exercise = workoutStepLabel(activeWorkoutStep)
+    const entry: WorkoutSetEntry = {
+      id: `set-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      date: dayKey,
+      session: todayGymPlan.title,
+      exercise,
+      weight: setWeight.trim() || 'bodyweight',
+      reps: Math.max(1, Number(setReps) || 8),
+      rpe: Math.max(1, Math.min(10, Number(setRpe) || 7)),
+    }
+    const next = [entry, ...workoutSets]
+    saveWorkoutSets(next)
+    setRestSeconds(entry.rpe >= 8 ? 120 : 75)
+    setCoachPulse(`Logged set for ${exercise}. Rest timer started.`)
+    setSetReps('')
+  }
+
+  function swapCurrentExercise() {
+    const options = ['Push-up variation', 'Dumbbell row', 'Goblet squat', 'RDL variation', 'Bike sprint', 'Core circuit']
+    const current = workoutStepLabel(activeWorkoutStep)
+    const nextOption = options.find(option => !current.toLowerCase().includes(option.toLowerCase().slice(0, 5))) || options[0]
+    setSwappedSteps(currentMap => ({
+      ...currentMap,
+      [`${dayKey}-${todayGymPlan.day}-${activeWorkoutStep}`]: `${nextOption} - swapped from: ${todayGymPlan.plan[activeWorkoutStep]}`,
+    }))
+    setCoachPulse(`Exercise swapped to ${nextOption}. Keep the same intent, safer setup.`)
+  }
+
+  function finishWorkoutSession() {
+    const next = { ...workoutDone }
+    todayGymPlan.plan.forEach(step => {
+      next[`${dayKey}-${todayGymPlan.day}-${step}`] = true
+    })
+    setWorkoutDone(next)
+    try { localStorage.setItem(WORKOUT_DONE_KEY, JSON.stringify(next)) } catch { /* local only */ }
+    const trainKey = `${dayKey}-train`
+    const nextChecklist = { ...checklist, [trainKey]: true }
+    setChecklist(nextChecklist)
+    try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(nextChecklist)) } catch { /* local only */ }
+    setSessionCelebration(true)
+    setRestSeconds(0)
+    setCoachPulse('Session finished. Exercise calories added to Eat, progression unlocked if RPE stayed controlled.')
+    window.setTimeout(() => setSessionCelebration(false), 2600)
   }
 
   function removeWorkoutSet(id: string) {
@@ -1236,7 +1406,9 @@ export default function GioDashboardPage() {
     setWaterDone(value)
     try {
       const water = JSON.parse(localStorage.getItem(WATER_KEY) || '{}') as Record<string, number>
-      localStorage.setItem(WATER_KEY, JSON.stringify({ ...water, [dayKey]: value }))
+      const next = { ...water, [dayKey]: value }
+      setWaterHistory(next)
+      localStorage.setItem(WATER_KEY, JSON.stringify(next))
     } catch { /* local only */ }
     if (memoryUserEmail && personalSyncMode === 'cloud-ready') void saveGioWater(dayKey, value)
   }
@@ -1282,6 +1454,7 @@ export default function GioDashboardPage() {
   }
 
   const completedActions = DAILY_ACTIONS.filter(item => checklist[`${dayKey}-${item.id}`]).length
+  const allDailyActionsDone = completedActions === DAILY_ACTIONS.length
   const tomorrowReadyDone = TOMORROW_READY_ACTIONS.filter(item => checklist[`${dayKey}-tomorrow-${item.id}`]).length
   const caloriesEstimate = NUTRITION_TARGETS.calories
 
@@ -1450,6 +1623,15 @@ export default function GioDashboardPage() {
             </Card>
 
             <div className="grid gap-2 sm:grid-cols-2">
+              {allDailyActionsDone && (
+                <button
+                  onClick={() => makeTomorrowBetter()}
+                  className="col-span-full rounded-2xl border border-emerald-300/35 bg-emerald-300/15 p-4 text-left transition hover:bg-emerald-300/20"
+                >
+                  <p className="text-xl font-black text-emerald-100">Day won. Streak protected.</p>
+                  <p className="mt-1 text-sm text-white/55">Tap to build tomorrow from today&apos;s evidence.</p>
+                </button>
+              )}
               {DAILY_ACTIONS.map(item => (
                 <CheckRow
                   key={item.id}
@@ -1616,6 +1798,81 @@ export default function GioDashboardPage() {
         </Section>
 
         <Section id="train" eyebrow="Performance" title="Training System" icon={Dumbbell}>
+          <Card className="mb-4 border-violet-300/25 bg-violet-300/[0.055]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-violet-200">Session player</p>
+                <h3 className="mt-1 text-2xl font-black tracking-tight">{todayGymPlan.title}</h3>
+                <p className="mt-1 text-sm text-white/45">{todayGymPlan.focus}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => chooseTrainingAction('Home', '20', '20-minute mode: minimum effective session.')} className="rounded-full border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-black text-amber-100 hover:bg-amber-300/15">
+                  20-min mode
+                </button>
+                <button onClick={finishWorkoutSession} className="rounded-full bg-emerald-300 px-3 py-2 text-xs font-black text-slate-950 hover:bg-emerald-200">
+                  Finish Session
+                </button>
+              </div>
+            </div>
+            <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-violet-300 transition-all" style={{ width: `${workoutCompletion}%` }} />
+            </div>
+            {sessionCelebration && (
+              <div className="mt-3 rounded-2xl border border-emerald-300/30 bg-emerald-300/15 p-4 text-center">
+                <p className="text-xl font-black text-emerald-100">Session complete. Day won.</p>
+                <p className="mt-1 text-sm text-white/55">Exercise calories are now counted in Eat and progression is unlocked.</p>
+              </div>
+            )}
+            <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_0.72fr]">
+              <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/35">
+                      Step {Math.min(activeWorkoutStep + 1, todayGymPlan.plan.length)} / {todayGymPlan.plan.length}
+                    </p>
+                    <p className="mt-2 text-xl font-black text-white">{currentWorkoutStep}</p>
+                  </div>
+                  <span className={cn(
+                    'rounded-full border px-3 py-1 text-xs font-black',
+                    restSeconds > 0 ? 'border-amber-300/30 bg-amber-300/10 text-amber-100' : 'border-cyan-300/30 bg-cyan-300/10 text-cyan-100'
+                  )}>
+                    Rest {Math.floor(restSeconds / 60)}:{String(restSeconds % 60).padStart(2, '0')}
+                  </span>
+                </div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                  <input value={setWeight} onChange={event => setSetWeight(event.target.value)} placeholder="Weight" className="h-11 rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-white outline-none placeholder:text-white/25" />
+                  <input value={setReps} onChange={event => setSetReps(event.target.value)} inputMode="numeric" placeholder="Reps" className="h-11 rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-white outline-none placeholder:text-white/25" />
+                  <input value={setRpe} onChange={event => setSetRpe(event.target.value)} inputMode="decimal" placeholder="RPE" className="h-11 rounded-xl border border-white/10 bg-black/30 px-3 text-sm text-white outline-none placeholder:text-white/25" />
+                  <button onClick={logCurrentWorkoutSet} className="rounded-xl bg-violet-300 px-3 py-3 text-sm font-black text-slate-950 hover:bg-violet-200">Log set</button>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                  <button onClick={swapCurrentExercise} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-black text-white/58 hover:text-white">Swap exercise</button>
+                  <button onClick={() => setRestSeconds(60)} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-black text-white/58 hover:text-white">60s rest</button>
+                  <button onClick={() => setActiveWorkoutStep(step => Math.max(0, step - 1))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-black text-white/58 hover:text-white">Prev</button>
+                  <button onClick={() => setActiveWorkoutStep(step => Math.min(todayGymPlan.plan.length - 1, step + 1))} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-black text-white/58 hover:text-white">Next</button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                {todayGymPlan.plan.map((step, index) => {
+                  const key = `${dayKey}-${todayGymPlan.day}-${step}`
+                  const active = index === activeWorkoutStep
+                  return (
+                    <button
+                      key={`${step}-${index}`}
+                      onClick={() => setActiveWorkoutStep(index)}
+                      className={cn(
+                        'rounded-xl border px-3 py-2 text-left text-xs font-bold transition',
+                        active ? 'border-violet-300/45 bg-violet-300/15 text-violet-100' : workoutDone[key] ? 'border-emerald-300/35 bg-emerald-300/10 text-emerald-100' : 'border-white/10 bg-black/20 text-white/45 hover:text-white'
+                      )}
+                    >
+                      {workoutStepLabel(index)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </Card>
+
           <div className="grid gap-4 xl:grid-cols-[1fr_0.9fr]">
             <Card>
               <div className="grid gap-2 sm:grid-cols-3">
@@ -1830,6 +2087,217 @@ export default function GioDashboardPage() {
         </Section>
 
         <Section id="eat" eyebrow="Nutrition" title="Food, Water, Groceries" icon={Utensils}>
+          <Card className="mb-4 border-emerald-300/20 bg-emerald-300/[0.055]">
+            <div className="grid gap-4 xl:grid-cols-[0.42fr_1.58fr]">
+              <button
+                onClick={() => openFoodSheet('Breakfast')}
+                className="flex min-h-52 flex-col items-center justify-center rounded-2xl border border-emerald-300/20 bg-black/25 p-4 transition hover:border-emerald-300/45"
+              >
+                <div
+                  className="flex h-36 w-36 items-center justify-center rounded-full transition-all"
+                  style={{ background: `conic-gradient(#34d399 ${caloriePct}%, rgba(255,255,255,0.12) 0)` }}
+                >
+                  <div className="flex h-28 w-28 flex-col items-center justify-center rounded-full bg-[#08100d] text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/35">Remaining</p>
+                    <p className={cn('text-3xl font-black', caloriesRemaining < 700 ? 'text-amber-200' : 'text-emerald-200')}>
+                      {caloriesRemaining}
+                    </p>
+                    <p className="text-[10px] text-white/35">of {calorieGoal}</p>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs font-bold text-white/45">
+                  {calorieGoal} - {macroTotals.calories} food + {exerciseCalories} exercise
+                </p>
+                {macroTotals.calories < 2200 && (
+                  <p className="mt-2 rounded-xl border border-amber-300/25 bg-amber-300/10 px-3 py-2 text-xs font-black text-amber-100">
+                    Under-fuel warning: eat enough to perform and recover.
+                  </p>
+                )}
+              </button>
+
+              <div className="space-y-3">
+                <div className="grid gap-2 md:grid-cols-3">
+                  {[
+                    ['Protein', macroTotals.protein, MACRO_TARGETS.protein, 'bg-emerald-300'],
+                    ['Carbs', macroTotals.carbs, MACRO_TARGETS.carbs, 'bg-cyan-300'],
+                    ['Fat', macroTotals.fat, MACRO_TARGETS.fat, 'bg-violet-300'],
+                  ].map(([label, value, target, color]) => {
+                    const pct = Math.min(100, Math.round((Number(value) / Number(target)) * 100))
+                    return (
+                      <button
+                        key={String(label)}
+                        onClick={() => askCoach(`My ${label} is at ${value}g. What should I eat next?`)}
+                        className="rounded-xl border border-white/10 bg-black/20 p-3 text-left transition hover:border-white/25"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-black text-white">{String(label)}</p>
+                          <p className="text-xs font-bold text-white/45">{String(value)}g / {String(target)}g</p>
+                        </div>
+                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+                          <div className={cn('h-full rounded-full transition-all', String(color))} style={{ width: `${pct}%` }} />
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {MEAL_SECTIONS.map(meal => {
+                    const entries = diaryByMeal[meal] || []
+                    const totals = foodTotals(entries)
+                    return (
+                      <div key={meal} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <button onClick={() => openFoodSheet(meal)} className="text-left">
+                            <p className="text-sm font-black text-white">{meal}</p>
+                            <p className="mt-0.5 text-xs text-white/42">{totals.calories} cal - {totals.protein}g protein</p>
+                          </button>
+                          <div className="flex gap-2">
+                            <button onClick={() => copyYesterdayMeal(meal)} className="rounded-lg border border-white/10 px-2 py-1 text-[10px] font-black text-white/45 hover:text-white">
+                              Copy Yesterday
+                            </button>
+                            <button onClick={() => openFoodSheet(meal)} className="rounded-lg bg-emerald-300 px-3 py-2 text-xs font-black text-slate-950 hover:bg-emerald-200">
+                              + Add
+                            </button>
+                          </div>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          {entries.length ? entries.map(entry => (
+                            <div key={entry.id} className="rounded-xl border border-white/10 bg-black/25 p-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <div>
+                                  <p className="text-xs font-black text-white">{entry.name}</p>
+                                  <p className="mt-0.5 text-[11px] text-white/42">{entry.grams}g - {entry.calories} cal - {entry.protein}g protein</p>
+                                </div>
+                                <div className="flex gap-1">
+                                  <button onClick={() => setEditingFoodId(editingFoodId === entry.id ? '' : entry.id)} className="rounded-lg border border-white/10 px-2 py-1 text-[10px] font-black text-white/45 hover:text-white">
+                                    ...
+                                  </button>
+                                  <button onClick={() => removeFoodEntry(entry.id)} className="rounded-lg border border-red-300/20 px-2 py-1 text-[10px] font-black text-red-200/70 hover:text-red-100">
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                              {editingFoodId === entry.id && (
+                                <div className="mt-2 flex gap-2">
+                                  <input
+                                    defaultValue={entry.grams}
+                                    inputMode="decimal"
+                                    onBlur={event => updateFoodGrams(entry, Number(event.target.value))}
+                                    className="h-9 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-white outline-none"
+                                  />
+                                  <button onClick={() => relogFood(entry, meal)} className="rounded-lg border border-emerald-300/20 px-3 text-[10px] font-black text-emerald-100">
+                                    Re-log
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )) : (
+                            <button onClick={() => openFoodSheet(meal)} className="w-full rounded-xl border border-dashed border-white/10 bg-black/20 px-3 py-3 text-xs font-black text-white/35 hover:text-white">
+                              + Add {meal.toLowerCase()}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {exerciseCalories > 0 && (
+                  <button onClick={() => setFocus('Train')} className="w-full rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-3 py-2 text-left text-xs font-black text-emerald-100">
+                    +{exerciseCalories} exercise calories added from completed workout.
+                  </button>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {foodSheetOpen && (
+            <Card className="mb-4 border-cyan-300/25 bg-cyan-300/[0.055]">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-white">Add food to {foodMeal}</p>
+                  <p className="mt-1 text-xs text-white/42">Search, enter grams, preview macros, then commit instantly.</p>
+                </div>
+                <button onClick={() => setFoodSheetOpen(false)} className="rounded-full border border-white/10 px-3 py-1 text-xs font-black text-white/45 hover:text-white">
+                  Close
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {(['Staples', 'Combos', 'Recent', 'Custom'] as FoodAddTab[]).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setFoodAddTab(tab)}
+                    className={cn(
+                      'rounded-full border px-3 py-2 text-xs font-black transition',
+                      foodAddTab === tab ? 'border-cyan-300 bg-cyan-300 text-slate-950' : 'border-white/10 bg-black/20 text-white/45 hover:text-white'
+                    )}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 grid gap-2 md:grid-cols-[1fr_0.3fr]">
+                <input
+                  value={foodSearch}
+                  onChange={event => setFoodSearch(event.target.value)}
+                  placeholder="Search foods"
+                  className="h-11 rounded-xl border border-white/10 bg-black/25 px-3 text-sm text-white outline-none placeholder:text-white/25"
+                />
+                <input
+                  value={foodGrams}
+                  onChange={event => setFoodGrams(event.target.value)}
+                  inputMode="decimal"
+                  placeholder="grams"
+                  className="h-11 rounded-xl border border-white/10 bg-black/25 px-3 text-sm text-white outline-none placeholder:text-white/25"
+                />
+              </div>
+              {foodAddTab === 'Staples' && (
+                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredStaples.map(food => {
+                    const grams = Number(foodGrams) || 100
+                    const preview = macroEntry(food, grams, foodMeal, dayKey)
+                    return (
+                      <button key={food.name} onClick={() => addFoodByScale(food.name)} className="rounded-xl border border-white/10 bg-black/20 p-3 text-left transition hover:border-cyan-300/35">
+                        <p className="text-sm font-black text-white">{food.name}</p>
+                        <p className="mt-1 text-xs text-white/45">{preview.calories} cal - {preview.protein}g protein at {grams}g</p>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {foodAddTab === 'Combos' && (
+                <div className="mt-3 grid gap-2 md:grid-cols-2">
+                  {TOMORROW_MEAL_PRESETS.map(preset => (
+                    <button key={preset.label} onClick={() => logMealPreset(preset)} className="rounded-xl border border-white/10 bg-black/20 p-3 text-left transition hover:border-emerald-300/35">
+                      <p className="text-sm font-black text-white">{preset.label}</p>
+                      <p className="mt-1 text-xs text-white/45">{preset.note}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {foodAddTab === 'Recent' && (
+                <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {filteredRecent.length ? filteredRecent.map(entry => (
+                    <button key={`${entry.id}-${entry.name}`} onClick={() => relogFood(entry)} className="rounded-xl border border-white/10 bg-black/20 p-3 text-left transition hover:border-violet-300/35">
+                      <p className="text-sm font-black text-white">{entry.name}</p>
+                      <p className="mt-1 text-xs text-white/45">{entry.grams}g last time - tap to re-log</p>
+                    </button>
+                  )) : <p className="text-sm text-white/42">No recent foods yet.</p>}
+                </div>
+              )}
+              {foodAddTab === 'Custom' && (
+                <div className="mt-3 grid gap-2 md:grid-cols-5">
+                  <input value={customFoodName} onChange={event => setCustomFoodName(event.target.value)} placeholder="Custom food" className="h-10 rounded-xl border border-white/10 bg-black/25 px-3 text-xs text-white outline-none placeholder:text-white/25" />
+                  <input value={customCalories} onChange={event => setCustomCalories(event.target.value)} placeholder="cal/100g" inputMode="decimal" className="h-10 rounded-xl border border-white/10 bg-black/25 px-3 text-xs text-white outline-none placeholder:text-white/25" />
+                  <input value={customProtein} onChange={event => setCustomProtein(event.target.value)} placeholder="protein/100g" inputMode="decimal" className="h-10 rounded-xl border border-white/10 bg-black/25 px-3 text-xs text-white outline-none placeholder:text-white/25" />
+                  <input value={customCarbs} onChange={event => setCustomCarbs(event.target.value)} placeholder="carbs/100g" inputMode="decimal" className="h-10 rounded-xl border border-white/10 bg-black/25 px-3 text-xs text-white outline-none placeholder:text-white/25" />
+                  <button onClick={addCustomFood} className="rounded-xl bg-cyan-300 px-3 py-2 text-xs font-black text-slate-950 hover:bg-cyan-200">Add Custom</button>
+                </div>
+              )}
+            </Card>
+          )}
+
           <div className="grid gap-4 xl:grid-cols-[1fr_0.95fr]">
             <div className="space-y-4">
               <Card>
@@ -2250,19 +2718,35 @@ export default function GioDashboardPage() {
                   <LineChart className="h-4 w-4 text-violet-300" />
                   <p className="text-sm font-black">Weekly weigh-in trend</p>
                 </div>
+                <div className="mt-3 flex gap-2">
+                  {(['7', '30'] as const).map(range => (
+                    <button
+                      key={range}
+                      onClick={() => setTrackRange(range)}
+                      className={cn(
+                        'rounded-full border px-3 py-1 text-xs font-black',
+                        trackRange === range ? 'border-violet-300 bg-violet-300 text-slate-950' : 'border-white/10 bg-black/20 text-white/45 hover:text-white'
+                      )}
+                    >
+                      {range} days
+                    </button>
+                  ))}
+                </div>
                 <div className="mt-4 flex h-28 items-end gap-2">
-                  {trend.values.length ? trend.values.map(item => (
-                    <div key={item.date} className="flex flex-1 flex-col items-center gap-2">
+                  {trackLogs.length ? trackLogs.map(item => {
+                    const weight = Number(item.weight)
+                    return (
+                    <button key={item.date} onClick={() => setSelectedTrackDate(item.date)} className="flex flex-1 flex-col items-center gap-2">
                       <div
                         className={cn(
                           'w-full rounded-t-xl',
-                          trend.status === 'green' ? 'bg-emerald-300/80' : trend.status === 'red' ? 'bg-red-300/80' : 'bg-amber-300/80'
+                          selectedTrackDate === item.date ? 'bg-cyan-300' : trend.status === 'green' ? 'bg-emerald-300/80' : trend.status === 'red' ? 'bg-red-300/80' : 'bg-amber-300/80'
                         )}
-                        style={{ height: `${Math.max(12, Math.min(100, (item.n - 120) * 4))}%` }}
+                        style={{ height: `${Number.isFinite(weight) ? Math.max(12, Math.min(100, (weight - 120) * 4)) : 12}%` }}
                       />
-                      <span className="text-[10px] text-white/35">{item.n}</span>
-                    </div>
-                  )) : <p className="text-sm text-white/45">Log morning weight for two days to activate the trend.</p>}
+                      <span className="text-[10px] text-white/35">{Number.isFinite(weight) ? weight : '-'}</span>
+                    </button>
+                  )}) : <p className="text-sm text-white/45">Log morning weight for two days to activate the trend.</p>}
                 </div>
                 <p className="mt-3 text-sm font-black text-white">{trend.average ? `${trend.average} lb 7-day average` : 'No average yet'}</p>
                 <p className="mt-1 text-xs leading-relaxed text-white/42">{trend.message} React only to the 7-day average moving 2+ lb.</p>
@@ -2345,6 +2829,79 @@ export default function GioDashboardPage() {
               </Card>
             </div>
           </div>
+
+          <Card className="mt-4 border-cyan-300/20 bg-cyan-300/[0.055]">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-200">Tap-to-inspect analytics</p>
+                <p className="mt-1 text-sm font-black text-white">{selectedTrackLog.date || dayKey} full log</p>
+              </div>
+              <button onClick={() => setSelectedTrackDate(dayKey)} className="rounded-full border border-cyan-300/20 bg-black/20 px-3 py-1 text-xs font-black text-cyan-100">
+                Today
+              </button>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-[0.85fr_1.15fr]">
+              <div className="grid grid-cols-2 gap-2">
+                <Metric label="Weight" value={selectedTrackLog.weight || '-'} sub="morning" tone="violet" />
+                <Metric label="Sleep" value={selectedTrackLog.sleep || '-'} sub="hours" tone="cyan" />
+                <Metric label="Energy" value={selectedTrackLog.energy || '-'} sub="1-10" tone="green" />
+                <Metric label="Soreness" value={selectedTrackLog.soreness || '-'} sub="1-10" tone="amber" />
+              </div>
+              <div className="grid gap-3">
+                <div>
+                  <p className="mb-2 text-xs font-black text-white">Workout completion heatmap</p>
+                  <div className="grid grid-cols-7 gap-1">
+                    {trackLogs.slice(-28).map(log => {
+                      const complete = DAILY_ACTIONS.filter(action => checklist[`${log.date}-${action.id}`]).length
+                      return (
+                        <button
+                          key={`heat-${log.date}`}
+                          onClick={() => setSelectedTrackDate(log.date)}
+                          title={`${log.date}: ${complete}/8`}
+                          className={cn(
+                            'aspect-square rounded-md border text-[10px] font-black transition',
+                            complete >= 8 ? 'border-emerald-300 bg-emerald-300 text-slate-950' : complete >= 4 ? 'border-cyan-300/30 bg-cyan-300/20 text-cyan-100' : 'border-white/10 bg-black/25 text-white/25'
+                          )}
+                        >
+                          {complete}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {[
+                    ['Pushups', selectedTrackLog.pushups || '-'],
+                    ['Pullups', selectedTrackLog.pullups || '-'],
+                    ['Plank', selectedTrackLog.plank || '-'],
+                  ].map(([label, value]) => (
+                    <button key={label} onClick={() => setCoachQuestion(`${label} test is ${value}. How do I improve?`)} className="rounded-xl border border-white/10 bg-black/20 p-3 text-left hover:border-cyan-300/30">
+                      <p className="text-xs font-black text-white">{label}</p>
+                      <p className="mt-1 text-xl font-black text-cyan-100">{value}</p>
+                    </button>
+                  ))}
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-black text-white">Water history</p>
+                  <div className="flex h-20 items-end gap-1">
+                    {trackLogs.map(log => {
+                      const blocks = waterHistory[log.date] || 0
+                      return (
+                        <button
+                          key={`water-${log.date}`}
+                          onClick={() => setSelectedTrackDate(log.date)}
+                          className="flex flex-1 flex-col items-center gap-1"
+                        >
+                          <div className="w-full rounded-t bg-cyan-300/75" style={{ height: `${Math.max(8, blocks * 10)}%` }} />
+                          <span className="text-[9px] text-white/30">{blocks}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <Card>
