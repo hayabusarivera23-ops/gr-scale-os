@@ -153,8 +153,20 @@ export function isDraftStale(lead: HvacPipelineLead) {
   return lead.stage === 'LIST' && daysSinceIso(lead.draftCreatedAt) > 5
 }
 
+export function prospectSafeFlaw(text?: string) {
+  const cleaned = (text || '').trim().replace(/\.+$/, '')
+  if (!cleaned) return ''
+  const internalPattern = /target|gmail|draft|lexthebarber|meloair|proof|pitch|angle|phone lead|call script|keep as|send free|reviews\b/i
+  const looksInternal =
+    cleaned.startsWith('#') ||
+    internalPattern.test(cleaned) ||
+    /\b[A-Z]{4,}\b/.test(cleaned) ||
+    cleaned.split('. ').length > 2
+  return looksInternal ? '' : cleaned
+}
+
 export function mergeResponseTemplate(template: string, lead?: Partial<HvacPipelineLead>, problemOverride?: string) {
-  const problem = problemOverride?.trim() || lead?.flaws?.[0] || lead?.notes || 'one thing that may be costing you calls'
+  const problem = problemOverride?.trim() || prospectSafeFlaw(lead?.flaws?.[0]) || prospectSafeFlaw(lead?.notes) || 'one thing that may be costing you calls'
   return template
     .replaceAll('{name}', lead?.name || 'your business')
     .replaceAll('{problem}', problem)
@@ -257,7 +269,7 @@ export function nextMoneyAction(leads: HvacPipelineLead[]): MoneyAction {
 }
 
 export function outreachDraftFor(lead: HvacPipelineLead) {
-  const flaw = lead.flaws[0] || 'your website could probably turn more visitors into calls'
+  const flaw = prospectSafeFlaw(lead.flaws[0]) || 'your website could probably turn more visitors into calls'
   return `Subject: quick idea for ${lead.name}\n\nHey ${lead.name} team,\n\nI was looking at your online presence and noticed ${flaw}.\n\nI help local service businesses get seen better and turn more visitors into calls. Sometimes that means the website, sometimes Google Business Profile, sometimes just fixing the first impression people see from their phone.\n\nI can send a quick 60-second audit showing the biggest thing I would fix first. Want me to send it over?\n\n- Gio\nGR Scale`
 }
 
@@ -285,7 +297,8 @@ export function replyDraftFor(lead: HvacPipelineLead, replyText: string) {
 }
 
 export function proposalDraftFor(lead: HvacPipelineLead) {
-  const flaws = lead.flaws.length ? lead.flaws.map(item => `- ${item}`).join('\n') : '- Mobile conversion and quote flow need improvement'
+  const safeFlaws = lead.flaws.map(item => prospectSafeFlaw(item)).filter(Boolean)
+  const flaws = safeFlaws.length ? safeFlaws.map(item => `- ${item}`).join('\n') : '- Mobile conversion and quote flow need improvement'
   return `# GR Scale Proposal - ${lead.name}\n\n## Problems found\n${flaws}\n\n## What GR Scale will build\n- A fast, mobile-first website built to drive calls and quote requests\n- Clear service sections and trust-building copy\n- Click-to-call and quote buttons on every important page\n- Basic local SEO structure for HVAC search intent\n- Launch support and monthly maintenance\n\n## Price\n- Build: $500\n- Monthly maintenance: $99/mo\n- Timeline: 7-14 days after deposit and required business info\n\n## Next step\nApprove the project with a $250 deposit. Once the deposit is received, GR Scale starts the build and sends the first preview.\n\nPrepared by Gio at GR Scale.`
 }
 
