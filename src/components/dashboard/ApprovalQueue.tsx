@@ -28,6 +28,7 @@ export default function ApprovalQueue() {
   const [localApprovals, setLocalApprovals] = useState<LocalApproval[]>([])
   const [localStatus, setLocalStatus] = useState<Record<string, 'approved' | 'rejected'>>({})
   const [configured, setConfigured] = useState<boolean | null>(null)
+  const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [copied, setCopied] = useState('')
 
@@ -39,7 +40,12 @@ export default function ApprovalQueue() {
         setCommands(queue.commands ?? [])
         setConfigured(Boolean(queue.configured))
       } else {
-        setError(queue.error ?? 'Queue unavailable')
+        const raw = queue.error ?? 'Queue unavailable'
+        if (/github read failed|bad credentials|401|403/i.test(raw)) {
+          setNotice('Live queue is offline: the GitHub bridge token is missing or expired in Vercel. Local approvals below still work — add or refresh GITHUB_TOKEN to reconnect.')
+        } else {
+          setError(raw)
+        }
       }
       setLocalStatus(JSON.parse(localStorage.getItem(APPROVAL_KEY) || '{}') as Record<string, 'approved' | 'rejected'>)
       setLocalApprovals(JSON.parse(localStorage.getItem(LOCAL_APPROVALS_KEY) || '[]') as LocalApproval[])
@@ -93,6 +99,11 @@ export default function ApprovalQueue() {
       {configured === false && (
         <p className="mb-3 rounded-lg border border-zinc-800 bg-black/20 px-3 py-2 text-xs leading-relaxed text-zinc-500">
           Live queue writes need the GitHub bridge token. Until then, this approval desk still shows local/saved items and protects the workflow.
+        </p>
+      )}
+      {notice && (
+        <p className="mb-3 rounded-lg border border-amber-500/25 bg-black/20 px-3 py-2 text-xs leading-relaxed text-amber-300">
+          {notice}
         </p>
       )}
       {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
