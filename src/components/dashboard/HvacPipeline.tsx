@@ -57,6 +57,7 @@ export default function HvacPipeline() {
   const [replyProblem, setReplyProblem] = useState('')
   const [responseDraft, setResponseDraft] = useState('')
   const [dayKey, setDayKey] = useState('today')
+  const [openedLeadId, setOpenedLeadId] = useState('')
   const [newLead, setNewLead] = useState({ name: '', siteUrl: '', email: '', phone: '', city: 'Tampa', notes: '' })
   const [selectedSignals, setSelectedSignals] = useState<Record<string, boolean>>({})
   const [stageFilter, setStageFilter] = useState<HvacPipelineStage | 'ALL'>('ALL')
@@ -127,7 +128,12 @@ export default function HvacPipeline() {
       nextTouch: addDaysIso(3),
     } : item)
     save(next)
-    setNotice(`${lead.name} marked sent. Follow-up scheduled in 3 days.`)
+    setOpenedLeadId('')
+    const sentToday = next.filter(item => item.stage !== 'LIST' && item.lastTouch === dayKey).length
+    const upNext = [...next].filter(item => item.stage === 'LIST').sort((a, b) => (b.heat ?? 0) - (a.heat ?? 0))[0]
+    setNotice(sentToday >= 10
+      ? `${lead.name} marked sent. ${sentToday}/10 - ring closed for today.`
+      : `${lead.name} marked sent (${sentToday}/10). Next up: ${upNext ? upNext.name : 'no unsent leads left'}.`)
     window.setTimeout(() => setNotice(''), 2200)
   }
 
@@ -299,8 +305,34 @@ export default function HvacPipeline() {
             <Mail className="h-4 w-4 text-emerald-400" />
             <p className="text-sm font-black text-white">Send Desk</p>
           </div>
-          <p className="mt-3 text-4xl font-black text-emerald-300">{sendsToday}/10</p>
-          <p className="mt-1 text-xs text-zinc-500">Sends today. Definition of progress: ten approved outreach taps.</p>
+          <div className="mt-3 flex items-center gap-4">
+            <div className="relative h-24 w-24 shrink-0">
+              <svg viewBox="0 0 100 100" className="h-24 w-24 -rotate-90">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(63,63,70,0.55)" strokeWidth="9" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="42"
+                  fill="none"
+                  stroke={sendsToday >= 10 ? '#34d399' : '#10b981'}
+                  strokeWidth="9"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(Math.min(sendsToday, 10) / 10) * 264} 264`}
+                  className="transition-all duration-500"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-black text-emerald-300">{sendsToday}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">of 10</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-black text-white">
+                {sendsToday >= 10 ? 'Ring closed. Ten sent today.' : `${10 - sendsToday} sends left to close the ring.`}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">Sends today. Definition of progress: ten approved outreach taps.</p>
+            </div>
+          </div>
           {sendDeskLead ? (
             <div className="mt-4 rounded-lg border border-zinc-800 bg-black/25 p-3">
               <div className="flex items-start justify-between gap-2">
@@ -315,6 +347,17 @@ export default function HvacPipeline() {
               <pre className="mt-3 max-h-44 overflow-auto whitespace-pre-wrap rounded-md border border-zinc-800 bg-zinc-950 p-3 text-[11px] leading-relaxed text-zinc-400">
                 {overdueLead ? followupDraftFor(sendDeskLead) : outreachDraftFor(sendDeskLead)}
               </pre>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-300">1 Preview</span>
+                <span className={cn(
+                  'rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+                  openedLeadId === sendDeskLead.id ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-zinc-800 bg-black/30 text-zinc-600'
+                )}>2 Open Gmail</span>
+                <span className={cn(
+                  'rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+                  openedLeadId === sendDeskLead.id ? 'border-amber-500/40 bg-amber-500/15 text-amber-200' : 'border-zinc-800 bg-black/30 text-zinc-600'
+                )}>3 Mark sent</span>
+              </div>
               {!overdueLead && isDraftStale(sendDeskLead) && (
                 <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -322,7 +365,7 @@ export default function HvacPipeline() {
                 </div>
               )}
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <a href={GMAIL_DRAFTS_LINK} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 text-sm font-black text-white transition hover:bg-emerald-400">
+                <a href={GMAIL_DRAFTS_LINK} target="_blank" rel="noopener noreferrer" onClick={() => setOpenedLeadId(sendDeskLead.id)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-3 text-sm font-black text-white transition hover:bg-emerald-400">
                   Open in Gmail
                 </a>
                 <button
@@ -336,8 +379,16 @@ export default function HvacPipeline() {
                     Add follow-up approval
                   </button>
                 ) : (
-                  <button onClick={() => markSent(sendDeskLead)} className="rounded-lg border border-zinc-700 px-4 py-3 text-sm font-black text-zinc-300 transition hover:border-emerald-500/40 hover:text-white">
-                    Mark sent
+                  <button
+                    onClick={() => markSent(sendDeskLead)}
+                    className={cn(
+                      'rounded-lg px-4 py-3 text-sm font-black transition',
+                      openedLeadId === sendDeskLead.id
+                        ? 'bg-emerald-500 text-white hover:bg-emerald-400'
+                        : 'border border-zinc-700 text-zinc-300 hover:border-emerald-500/40 hover:text-white'
+                    )}
+                  >
+                    {openedLeadId === sendDeskLead.id ? 'Mark sent - next lead' : 'Mark sent'}
                   </button>
                 )}
               </div>
