@@ -1,0 +1,10 @@
+{
+  "events": [
+    {
+      "ts": "2026-08-11T21:30:00-04:00",
+      "type": "system",
+      "title": "Activity feed connected",
+      "detail": "Every booking, form fill, and reply from grscales.com will appear here. Checked and updated at 12pm and 6pm daily."
+    }
+  ]
+}
