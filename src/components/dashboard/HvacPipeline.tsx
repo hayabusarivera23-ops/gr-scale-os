@@ -239,6 +239,10 @@ export default function HvacPipeline() {
     window.setTimeout(() => setNotice(''), 2200)
   }
 
+  const awaitingReply = [...leads]
+    .filter(lead => lead.stage === 'SENT' || lead.stage === 'PROPOSAL SENT')
+    .sort((a, b) => daysSinceIso(b.lastTouch) - daysSinceIso(a.lastTouch))
+  const replyDeskLead = leads.find(lead => lead.id === replyLeadId)
   const nextLead = [...leads]
     .filter(lead => lead.stage === 'LIST')
     .sort((a, b) => (b.heat ?? 0) - (a.heat ?? 0))[0]
@@ -401,6 +405,87 @@ export default function HvacPipeline() {
           )}
           <div className="mt-3 text-xs font-bold text-emerald-300">
             {notice}
+          </div>
+
+          <div className="mt-4 rounded-xl border border-sky-500/25 bg-sky-500/5 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-sky-400" />
+                <p className="text-sm font-black text-white">Reply Desk</p>
+              </div>
+              <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-[10px] font-black text-sky-300">
+                {awaitingReply.length} AWAITING REPLY
+              </span>
+            </div>
+
+            {replyDeskLead ? (
+              <div className="mt-3 rounded-lg border border-zinc-800 bg-black/25 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-black text-white">{replyDeskLead.name}</p>
+                    <p className="mt-1 text-[11px] font-bold text-zinc-500">1 paste it - 2 read the draft - 3 queue it</p>
+                  </div>
+                  <button onClick={() => toggleReplyBox(replyDeskLead)} className="shrink-0 rounded-md border border-zinc-700 px-2.5 py-1 text-[10px] font-black text-zinc-500 transition hover:text-white">CLOSE</button>
+                </div>
+                <textarea
+                  value={replyText}
+                  onChange={event => setReplyText(event.target.value)}
+                  placeholder="Paste exactly what they wrote back..."
+                  className="mt-3 min-h-20 w-full resize-none rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-[12px] text-zinc-200 outline-none placeholder:text-zinc-700"
+                />
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {RESPONSE_TEMPLATES.map(template => (
+                    <button
+                      key={template.label}
+                      onClick={() => setReplyTemplateLabel(template.label)}
+                      className={cn(
+                        'rounded-full border px-2.5 py-1 text-[10px] font-bold transition',
+                        replyTemplateLabel === template.label ? 'border-sky-500/45 bg-sky-500/15 text-sky-200' : 'border-zinc-800 bg-black/25 text-zinc-500 hover:text-zinc-300'
+                      )}
+                    >
+                      {template.label}
+                    </button>
+                  ))}
+                </div>
+                <pre className="mt-3 max-h-40 overflow-auto whitespace-pre-wrap rounded-md border border-zinc-800 bg-zinc-950 p-3 text-[11px] leading-relaxed text-zinc-400">
+                  {responseDraft || mergeResponseTemplate(currentReplyTemplate.body, replyDeskLead, replyProblem)}
+                </pre>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <button
+                    onClick={() => copyText(responseDraft || mergeResponseTemplate(currentReplyTemplate.body, replyDeskLead, replyProblem), 'Reply draft copied')}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm font-black text-sky-300 transition hover:bg-sky-500/20"
+                  >
+                    <Copy className="h-4 w-4" /> Copy reply
+                  </button>
+                  <button
+                    onClick={() => submitReply(replyDeskLead)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 py-3 text-sm font-black text-white transition hover:bg-sky-400"
+                  >
+                    <CheckCircle2 className="h-4 w-4" /> Queue for approval
+                  </button>
+                </div>
+                <p className="mt-2 text-[10px] font-bold text-zinc-600">Nothing sends automatically. Approve it, then send it yourself from Gmail.</p>
+              </div>
+            ) : awaitingReply.length ? (
+              <div className="mt-3 space-y-2">
+                <p className="text-[11px] font-bold text-zinc-500">Tap the one that answered - the response draft writes itself.</p>
+                {awaitingReply.slice(0, 4).map(lead => (
+                  <button
+                    key={lead.id}
+                    onClick={() => toggleReplyBox(lead)}
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-black/25 px-3 py-3 text-left transition hover:border-sky-500/40"
+                  >
+                    <span>
+                      <span className="block text-sm font-black text-white">{lead.name}</span>
+                      <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-wider text-zinc-600">{lead.stage} - touched {daysSinceIso(lead.lastTouch)}d ago</span>
+                    </span>
+                    <span className="shrink-0 rounded-md bg-sky-500 px-3 py-1.5 text-[11px] font-black text-white">Got a reply</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm font-bold text-zinc-400">Nothing is waiting on a reply yet. Close the send ring first - replies land here the second you mark one sent.</p>
+            )}
           </div>
         </div>
 
