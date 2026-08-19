@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { AlertTriangle, CalendarCheck, CheckCircle2, Copy, FileSearch, Mail, Phone, PlusCircle, Rocket, Trophy } from 'lucide-react'
+import { AlertTriangle, CalendarCheck, CheckCircle2, Copy, FileSearch, FileText, Mail, Phone, PlusCircle, Rocket, Trophy } from 'lucide-react'
 import { useOS } from '@/lib/store'
 import {
   CALENDLY_AUDIT_LINK, GMAIL_DRAFTS_LINK, HVAC_PIPELINE_STAGES,
   HvacPipelineLead, HvacPipelineStage, LOCAL_APPROVALS_KEY, LocalApproval,
   RESPONSE_TEMPLATES, addDaysIso, countsByStage, createApproval, daysSinceIso,
   followupDraftFor, isDraftStale, isDue, mergeResponseTemplate, nextMoneyAction,
-  outreachDraftFor, pipelineFromStore, proposalDraftFor, todayIso,
+  outreachDraftFor, pipelineFromStore, proposalDraftFor, prospectSafeFlaw, todayIso,
 } from '@/lib/business'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +34,61 @@ const WEAK_GBP_SIGNALS = [
   'No website or booking link',
   'Weak description',
 ]
+
+const PROPOSAL_PACKAGES = [
+  {
+    label: 'Presence Fix',
+    build: 300,
+    monthly: 0,
+    deposit: 150,
+    days: '3-5',
+    scope: [
+      'Google Business Profile cleaned up: services, hours, photos, description',
+      'Click-to-call and directions working everywhere customers land',
+      'Review request link you can text after every job',
+      'One short report showing exactly what changed',
+    ],
+  },
+  {
+    label: 'Website Build',
+    build: 500,
+    monthly: 99,
+    deposit: 250,
+    days: '7-14',
+    scope: [
+      'Fast mobile-first website built to make the phone ring',
+      'Click-to-call and quote buttons on every page',
+      'Service pages written around what people actually search',
+      'Google Business Profile connected and cleaned up',
+      'Launch support so you are never stuck',
+    ],
+  },
+  {
+    label: 'Build + Local SEO',
+    build: 750,
+    monthly: 199,
+    deposit: 375,
+    days: '10-14',
+    scope: [
+      'Everything in the website build',
+      'Local SEO pages for your top service areas',
+      'Google posts and business listing cleanup',
+      'Monthly report showing calls, rankings and what I fixed',
+    ],
+  },
+] as const
+
+type ProposalPackage = typeof PROPOSAL_PACKAGES[number]
+
+function buildProposal(lead: HvacPipelineLead, pkg: ProposalPackage) {
+  const safeFlaws = lead.flaws.map(item => prospectSafeFlaw(item)).filter(Boolean)
+  const problems = safeFlaws.length
+    ? safeFlaws.slice(0, 4).map(item => `- ${item}`).join('\n')
+    : '- People on their phone cannot call or request a quote fast enough'
+  const scope = pkg.scope.map(item => `- ${item}`).join('\n')
+  const monthly = pkg.monthly ? `\n- Monthly: $${pkg.monthly}/mo for updates, hosting, edits and a monthly report` : ''
+  return `Subject: proposal for ${lead.name}\n\nHey ${lead.name} team,\n\nHere is the plan in plain english.\n\nWHAT I FOUND\n${problems}\n\nWHAT I WOULD BUILD - ${pkg.label}\n${scope}\n\nPRICE\n- Build: $${pkg.build} one-time${monthly}\n- Timeline: ${pkg.days} days after the deposit\n\nNEXT STEP\n$${pkg.deposit} deposit to start. You get the first preview inside a week, and you own everything when it is done.\n\nIf anything here does not fit, tell me straight and I will adjust it.\n\n- Gio\nGR Scale\ngrscales.com`
+}
 
 function stageRank(stage: HvacPipelineStage) {
   return HVAC_PIPELINE_STAGES.indexOf(stage)
@@ -61,6 +116,9 @@ export default function HvacPipeline() {
   const [newLead, setNewLead] = useState({ name: '', siteUrl: '', email: '', phone: '', city: 'Tampa', notes: '' })
   const [selectedSignals, setSelectedSignals] = useState<Record<string, boolean>>({})
   const [stageFilter, setStageFilter] = useState<HvacPipelineStage | 'ALL'>('ALL')
+  const [proposalLeadId, setProposalLeadId] = useState('')
+  const [proposalPackage, setProposalPackage] = useState<string>(PROPOSAL_PACKAGES[1].label)
+  const [proposalOpened, setProposalOpened] = useState('')
   const action = useMemo(() => nextMoneyAction(leads), [leads])
   const stageCounts = useMemo(() => countsByStage(leads), [leads])
   const currentReplyTemplate = useMemo(
@@ -193,6 +251,29 @@ export default function HvacPipeline() {
     setStage(lead.id, 'PROPOSAL SENT')
   }
 
+  function sendProposal(lead: HvacPipelineLead, pkg: ProposalPackage) {
+    pushApproval(createApproval({
+      kind: 'proposal',
+      leadId: lead.id,
+      leadName: lead.name,
+      title: `Proposal for ${lead.name} - ${pkg.label} ($${pkg.build}${pkg.monthly ? ` + $${pkg.monthly}/mo` : ''})`,
+      body: buildProposal(lead, pkg),
+      createdBy: 'Proposal Assistant',
+      href: GMAIL_DRAFTS_LINK,
+    }))
+    const next = leads.map(item => item.id === lead.id ? {
+      ...item,
+      stage: 'PROPOSAL SENT' as const,
+      lastTouch: dayKey,
+      nextTouch: addDaysIso(3),
+    } : item)
+    save(next)
+    setProposalLeadId('')
+    setProposalOpened('')
+    setNotice(`${lead.name} proposal queued - ${pkg.label}, $${pkg.deposit} deposit. Follow up in 3 days.`)
+    window.setTimeout(() => setNotice(''), 2400)
+  }
+
   function copyCalendly() {
     copyText(CALENDLY_AUDIT_LINK, 'Calendly link copied')
   }
@@ -243,6 +324,12 @@ export default function HvacPipeline() {
     .filter(lead => lead.stage === 'SENT' || lead.stage === 'PROPOSAL SENT')
     .sort((a, b) => daysSinceIso(b.lastTouch) - daysSinceIso(a.lastTouch))
   const replyDeskLead = leads.find(lead => lead.id === replyLeadId)
+  const proposalReady = [...leads]
+    .filter(lead => lead.stage === 'REPLIED' || lead.stage === 'CALL BOOKED' || lead.stage === 'AUDIT DONE')
+    .sort((a, b) => stageRank(b.stage) - stageRank(a.stage))
+  const proposalDeskLead = proposalReady.find(lead => lead.id === proposalLeadId) ?? proposalReady[0]
+  const currentPackage = PROPOSAL_PACKAGES.find(pkg => pkg.label === proposalPackage) ?? PROPOSAL_PACKAGES[1]
+  const proposalText = proposalDeskLead ? buildProposal(proposalDeskLead, currentPackage) : ''
   const nextLead = [...leads]
     .filter(lead => lead.stage === 'LIST')
     .sort((a, b) => (b.heat ?? 0) - (a.heat ?? 0))[0]
@@ -485,6 +572,113 @@ export default function HvacPipeline() {
               </div>
             ) : (
               <p className="mt-3 text-sm font-bold text-zinc-400">Nothing is waiting on a reply yet. Close the send ring first - replies land here the second you mark one sent.</p>
+            )}
+          </div>
+
+          <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-amber-400" />
+                <p className="text-sm font-black text-white">Proposal Desk</p>
+              </div>
+              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-black text-amber-300">
+                {proposalReady.length} READY TO CLOSE
+              </span>
+            </div>
+
+            {proposalDeskLead ? (
+              <div className="mt-3 rounded-lg border border-zinc-800 bg-black/25 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-black text-white">{proposalDeskLead.name}</p>
+                    <p className="mt-1 text-[11px] font-bold text-zinc-500">1 pick the price - 2 open Gmail - 3 queue it and mark sent</p>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-zinc-700 px-2 py-1 text-[10px] font-black text-zinc-500">{proposalDeskLead.stage}</span>
+                </div>
+
+                {proposalReady.length > 1 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {proposalReady.slice(0, 4).map(lead => (
+                      <button
+                        key={lead.id}
+                        onClick={() => { setProposalLeadId(lead.id); setProposalOpened('') }}
+                        className={cn(
+                          'rounded-full border px-2.5 py-1 text-[10px] font-bold transition',
+                          proposalDeskLead.id === lead.id ? 'border-amber-500/45 bg-amber-500/15 text-amber-200' : 'border-zinc-800 bg-black/25 text-zinc-500 hover:text-zinc-300'
+                        )}
+                      >
+                        {lead.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {PROPOSAL_PACKAGES.map(pkg => (
+                    <button
+                      key={pkg.label}
+                      onClick={() => setProposalPackage(pkg.label)}
+                      className={cn(
+                        'rounded-lg border p-2.5 text-left transition',
+                        currentPackage.label === pkg.label ? 'border-amber-500/45 bg-amber-500/15' : 'border-zinc-800 bg-black/25 hover:border-amber-500/30'
+                      )}
+                    >
+                      <p className={cn('text-[11px] font-black', currentPackage.label === pkg.label ? 'text-amber-200' : 'text-zinc-300')}>{pkg.label}</p>
+                      <p className="mt-1 text-[10px] font-bold text-zinc-500">
+                        ${pkg.build}{pkg.monthly ? ` + $${pkg.monthly}/mo` : ' one-time'}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-300">1 ${currentPackage.deposit} deposit</span>
+                  <span className={cn(
+                    'rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+                    proposalOpened === proposalDeskLead.id ? 'border-amber-500/40 bg-amber-500/15 text-amber-300' : 'border-zinc-800 bg-black/30 text-zinc-600'
+                  )}>2 Open Gmail</span>
+                  <span className={cn(
+                    'rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+                    proposalOpened === proposalDeskLead.id ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-200' : 'border-zinc-800 bg-black/30 text-zinc-600'
+                  )}>3 Queue + mark sent</span>
+                </div>
+
+                <pre className="mt-3 max-h-52 overflow-auto whitespace-pre-wrap rounded-md border border-zinc-800 bg-zinc-950 p-3 text-[11px] leading-relaxed text-zinc-400">
+                  {proposalText}
+                </pre>
+
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <button
+                    onClick={() => copyText(proposalText, 'Proposal copied')}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-black text-amber-300 transition hover:bg-amber-500/20"
+                  >
+                    <Copy className="h-4 w-4" /> Copy proposal
+                  </button>
+                  <a
+                    href={GMAIL_DRAFTS_LINK}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setProposalOpened(proposalDeskLead.id)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-3 text-sm font-black text-black transition hover:bg-amber-400"
+                  >
+                    <Mail className="h-4 w-4" /> Open in Gmail
+                  </a>
+                  <button
+                    onClick={() => sendProposal(proposalDeskLead, currentPackage)}
+                    className={cn(
+                      'inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-black transition sm:col-span-2',
+                      proposalOpened === proposalDeskLead.id
+                        ? 'bg-emerald-500 text-white hover:bg-emerald-400'
+                        : 'border border-zinc-700 text-zinc-300 hover:border-emerald-500/40 hover:text-white'
+                    )}
+                  >
+                    <CheckCircle2 className="h-4 w-4" /> Queue for approval + mark proposal sent
+                  </button>
+                </div>
+                <p className="mt-2 text-[10px] font-bold text-zinc-600">Nothing sends automatically. Copy it, send it yourself, then mark it here.</p>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm font-bold text-zinc-400">No lead is proposal-ready yet. Get a reply, book the audit call - then the proposal writes itself right here.</p>
             )}
           </div>
         </div>
