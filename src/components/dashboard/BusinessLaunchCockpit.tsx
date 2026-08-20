@@ -10,6 +10,7 @@ import { RESPONSE_TEMPLATES, mergeResponseTemplate } from '@/lib/business'
 import { cn } from '@/lib/utils'
 
 const CLAUDE_REPORT_KEY = 'gr.claude-operator-report.v1'
+const CLAUDE_REPORT_AT_KEY = 'gr.claude-operator-report-at.v1'
 const LAUNCH_CHECKLIST_KEY = 'gr.launch-checklist.v1'
 
 const OPERATOR_CADENCE = [
@@ -54,7 +55,21 @@ const REPORT_CARDS: { key: ReportKey, label: string, tone: string }[] = [
   { key: 'approval', label: 'Needs Gio Approval', tone: 'border-amber-400/25 bg-amber-400/10 text-amber-100' },
   { key: 'risk', label: 'Revenue Risk', tone: 'border-rose-400/25 bg-rose-400/10 text-rose-100' },
   { key: 'leads', label: 'New Leads', tone: 'border-cyan-400/25 bg-cyan-400/10 text-cyan-100' },
+  { key: 'next', label: 'Next Move', tone: 'border-violet-400/25 bg-violet-400/10 text-violet-100 sm:col-span-2' },
 ]
+
+function pastedAtLabel(iso: string) {
+  const at = new Date(iso)
+  if (Number.isNaN(at.getTime())) return ''
+  return at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
+    at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
+
+function isReportStale(iso: string) {
+  const at = new Date(iso)
+  if (Number.isNaN(at.getTime())) return false
+  return Date.now() - at.getTime() > 20 * 60 * 60 * 1000
+}
 
 function todayLabel() {
   return new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
@@ -103,6 +118,7 @@ function parseClaudeReport(report: string): Record<ReportKey, string> {
 
 export default function BusinessLaunchCockpit() {
   const [report, setReport] = useState('')
+  const [reportAt, setReportAt] = useState('')
   const [checklist, setChecklist] = useState<Record<string, boolean>>({})
   const [selectedTemplate, setSelectedTemplate] = useState(RESPONSE_TEMPLATES[0].label)
   const [mergeName, setMergeName] = useState('')
@@ -114,15 +130,18 @@ export default function BusinessLaunchCockpit() {
     [selectedTemplate]
   )
   const parsedReport = useMemo(() => parseClaudeReport(report), [report])
+  const reportHasSections = useMemo(() => Object.values(parsedReport).some(Boolean), [parsedReport])
   const done = LAUNCH_ITEMS.filter(item => checklist[item]).length
   const readyPct = Math.round((done / LAUNCH_ITEMS.length) * 100)
 
   useEffect(() => {
     try {
       setReport(localStorage.getItem(CLAUDE_REPORT_KEY) || '')
+      setReportAt(localStorage.getItem(CLAUDE_REPORT_AT_KEY) || '')
       setChecklist(JSON.parse(localStorage.getItem(LAUNCH_CHECKLIST_KEY) || '{}') as Record<string, boolean>)
     } catch {
       setReport('')
+      setReportAt('')
       setChecklist({})
     }
   }, [])
@@ -133,7 +152,12 @@ export default function BusinessLaunchCockpit() {
 
   function saveReport(next: string) {
     setReport(next)
-    try { localStorage.setItem(CLAUDE_REPORT_KEY, next) } catch { /* local only */ }
+    const at = next.trim() ? new Date().toISOString() : ''
+    setReportAt(at)
+    try {
+      localStorage.setItem(CLAUDE_REPORT_KEY, next)
+      localStorage.setItem(CLAUDE_REPORT_AT_KEY, at)
+    } catch { /* local only */ }
   }
 
   function toggleItem(item: string) {
@@ -193,9 +217,31 @@ export default function BusinessLaunchCockpit() {
 
       <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <CalendarClock className="h-4 w-4 text-cyan-300" />
-            <p className="text-sm font-black text-white">Claude operator reports</p>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <CalendarClock className="h-4 w-4 text-cyan-300" />
+              <p className="text-sm font-black text-white">Claude operator reports</p>
+            </div>
+            {report.trim() ? (
+              <div className="flex items-center gap-2">
+                {reportAt ? (
+                  <span className={cn(
+                    'rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+                    isReportStale(reportAt)
+                      ? 'border-amber-300/30 bg-amber-300/10 text-amber-200'
+                      : 'border-cyan-300/25 bg-cyan-300/10 text-cyan-200'
+                  )}>
+                    {isReportStale(reportAt) ? 'Stale - ' : ''}Pasted {pastedAtLabel(reportAt)}
+                  </span>
+                ) : null}
+                <button
+                  onClick={() => saveReport('')}
+                  className="rounded-full border border-zinc-700 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-zinc-400 transition hover:border-rose-400/40 hover:text-rose-200"
+                >
+                  Clear
+                </button>
+              </div>
+            ) : null}
           </div>
           <p className="text-xs leading-relaxed text-zinc-500">
             Claude reminders are external. Until Supabase/API report sync exists, paste Claude outputs here so the website becomes the command surface.
@@ -216,6 +262,11 @@ export default function BusinessLaunchCockpit() {
             placeholder="Paste Claude's latest operator report here..."
             className="mt-3 min-h-36 w-full resize-none rounded-lg border border-zinc-800 bg-black/30 p-3 text-sm leading-relaxed text-zinc-200 outline-none placeholder:text-zinc-700"
           />
+          {report.trim() && !reportHasSections ? (
+            <p className="mt-2 rounded-lg border border-amber-300/20 bg-amber-300/10 p-2.5 text-[11px] leading-relaxed text-amber-100">
+              No sections recognized yet. Ask Claude to label lines like &quot;#1 MONEY ACTION:&quot;, &quot;NEW LEADS:&quot;, &quot;GIO APPROVAL REQUIRED:&quot;, &quot;REVENUE RISK:&quot;, or &quot;NEXT MOVE:&quot; and the cards fill themselves.
+            </p>
+          ) : null}
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {OPERATOR_CADENCE.map(item => (
               <div key={`${item.time}-${item.label}`} className="rounded-lg border border-zinc-800 bg-black/25 p-3">
