@@ -395,6 +395,131 @@ export default function BusinessLaunchCockpit() {
           </div>
         </div>
       </div>
+      <GrowthDesk />
     </section>
+  )
+}
+const GROWTH_KEY = 'gr.growth-desk.v1'
+
+const GBP_ITEMS = [
+  'GBP video verification done',
+  'Photos: 10+ real job photos up',
+  'Services + service areas filled out',
+  'One GBP post this week',
+  'Every review has a reply',
+  'Citations match: Yelp, BBB, Angi, Facebook',
+]
+
+const REFERRAL_ASK = 'Quick favor - do you know one other business owner who needs more calls from their website or Google? Intro us by text, and if they sign, your next month of maintenance is free.'
+
+const REVIEW_ASK = 'Glad the new site is working for you! A quick Google review would help us a ton - takes 60 seconds. Want me to text you the direct review link?'
+
+type GrowthCounts = { refAsked: number, refWon: number, revAsked: number, revGot: number }
+
+function GrowthDesk() {
+  const [counts, setCounts] = useState<GrowthCounts>({ refAsked: 0, refWon: 0, revAsked: 0, revGot: 0 })
+  const [gbp, setGbp] = useState<Record<string, boolean>>({})
+  const [copied, setCopied] = useState('')
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(GROWTH_KEY) || '{}') as { counts?: GrowthCounts, gbp?: Record<string, boolean> }
+      if (saved.counts) setCounts(saved.counts)
+      if (saved.gbp) setGbp(saved.gbp)
+    } catch { /* local only */ }
+  }, [])
+
+  function persist(nextCounts: GrowthCounts, nextGbp: Record<string, boolean>) {
+    try { localStorage.setItem(GROWTH_KEY, JSON.stringify({ counts: nextCounts, gbp: nextGbp })) } catch { /* local only */ }
+  }
+
+  function bump(key: keyof GrowthCounts, delta: number) {
+    const next = { ...counts, [key]: Math.max(0, counts[key] + delta) }
+    setCounts(next)
+    persist(next, gbp)
+  }
+
+  function toggleGbp(item: string) {
+    const next = { ...gbp, [item]: !gbp[item] }
+    setGbp(next)
+    persist(counts, next)
+  }
+
+  async function copyAsk(text: string, label: string) {
+    await navigator.clipboard?.writeText(text)
+    setCopied(label)
+    window.setTimeout(() => setCopied(''), 1400)
+  }
+
+  const gbpDone = GBP_ITEMS.filter(item => gbp[item]).length
+  const trackers: { label: string, asked: keyof GrowthCounts, won: keyof GrowthCounts, wonLabel: string, ask: string, askLabel: string }[] = [
+    { label: 'Referrals', asked: 'refAsked', won: 'refWon', wonLabel: 'landed', ask: REFERRAL_ASK, askLabel: 'referral ask' },
+    { label: 'Reviews', asked: 'revAsked', won: 'revGot', wonLabel: 'posted', ask: REVIEW_ASK, askLabel: 'review ask' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Megaphone className="h-4 w-4 text-emerald-300" />
+        <p className="text-sm font-black text-white">Growth Desk - referrals, reviews, GBP</p>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {trackers.map(t => (
+            <div key={t.label} className="rounded-xl border border-emerald-400/20 bg-emerald-400/5 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-black text-white">{t.label}</p>
+                <span className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-200">
+                  {counts[t.won]} {t.wonLabel}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => bump(t.asked, 1)} className="rounded-lg bg-emerald-400 px-3 py-3 text-xs font-black text-slate-950 transition hover:bg-emerald-300">
+                  +1 asked ({counts[t.asked]})
+                </button>
+                <button onClick={() => bump(t.won, 1)} className="rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-3 py-3 text-xs font-black text-emerald-100 transition hover:bg-emerald-300/20">
+                  +1 {t.wonLabel}
+                </button>
+              </div>
+              <button onClick={() => copyAsk(t.ask, t.askLabel)} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-black text-zinc-300 transition hover:text-white">
+                <Copy className="h-3.5 w-3.5" /> {copied === t.askLabel ? 'Copied' : 'Copy ' + t.askLabel}
+              </button>
+              <button onClick={() => bump(t.asked, -1)} className="mt-2 w-full rounded-lg border border-zinc-800 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-zinc-600 transition hover:text-zinc-300">
+                Undo ask
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-cyan-300" />
+              <p className="text-sm font-black text-white">GBP checklist</p>
+            </div>
+            <span className={cn(
+              'rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+              gbpDone === GBP_ITEMS.length ? 'border-emerald-300/30 bg-emerald-300/10 text-emerald-200' : 'border-amber-300/30 bg-amber-300/10 text-amber-200'
+            )}>
+              {gbpDone}/{GBP_ITEMS.length}
+            </span>
+          </div>
+          <div className="grid gap-2">
+            {GBP_ITEMS.map(item => (
+              <button
+                key={item}
+                onClick={() => toggleGbp(item)}
+                className={cn(
+                  'flex items-start gap-2 rounded-lg border p-3 text-left text-sm transition',
+                  gbp[item] ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-100' : 'border-zinc-800 bg-black/25 text-zinc-500 hover:text-zinc-200'
+                )}
+              >
+                <CheckCircle2 className={cn('mt-0.5 h-4 w-4 shrink-0', gbp[item] ? 'text-emerald-300' : 'text-zinc-700')} />
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
