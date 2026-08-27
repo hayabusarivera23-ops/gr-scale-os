@@ -44,7 +44,35 @@ import ReferralTracker from '@/components/dashboard/ReferralTracker'
 import TomorrowBusinessReadiness from '@/components/dashboard/TomorrowBusinessReadiness'
 import DailyPromptsCard from '@/components/shared/DailyPromptsCard'
 
-// ─── Metric card ──────────────────────────────────────────────────────────────
+// ─── Metric card (premium pass: glass, count-up, glow) ───────────────────────
+
+/** Animate 0 → target with an ease-out curve. Matches the Scoreboard pass. */
+function useCountUp(target: number, duration = 900) {
+  const [display, setDisplay] = useState(0)
+  useEffect(() => {
+    if (!Number.isFinite(target) || target <= 0) { setDisplay(Math.max(0, target)); return }
+    let frame = 0
+    const start = performance.now()
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setDisplay(Math.round(target * eased))
+      if (p < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [target, duration])
+  return display
+}
+
+/** Per-accent glow + border when the metric is alive (>0). Static strings so Tailwind JIT keeps them. */
+const METRIC_GLOWS: Record<string, string> = {
+  'text-sky-400': 'border-sky-500/30 shadow-[0_0_18px_-6px_rgba(56,189,248,0.45)]',
+  'text-emerald-400': 'border-emerald-500/30 shadow-[0_0_18px_-6px_rgba(52,211,153,0.45)]',
+  'text-violet-400': 'border-violet-500/30 shadow-[0_0_18px_-6px_rgba(167,139,250,0.45)]',
+  'text-amber-400': 'border-amber-500/30 shadow-[0_0_18px_-6px_rgba(251,191,36,0.45)]',
+  'text-red-400': 'border-red-500/30 shadow-[0_0_18px_-6px_rgba(248,113,113,0.45)]',
+}
 
 function Metric({ label, value, sub, icon: Icon, color, href }: {
   label: string
@@ -54,13 +82,32 @@ function Metric({ label, value, sub, icon: Icon, color, href }: {
   color: string
   href: string
 }) {
+  // Split "value" into prefix + first number + suffix so "$1,200", "3/10", "45%" all count up.
+  const match = value.match(/^([^0-9]*)([\d,]+)(.*)$/)
+  const target = match ? parseInt(match[2].replace(/,/g, ''), 10) : 0
+  const prefix = match ? match[1] : ''
+  const suffix = match ? match[3] : value
+  const animated = useCountUp(target)
+  const alive = target > 0
+  const glow = alive ? (METRIC_GLOWS[color] ?? '') : ''
+
   return (
-    <Link href={href} className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 hover:border-zinc-700 transition block">
+    <Link href={href}
+      className={cn(
+        'relative block overflow-hidden rounded-xl border border-zinc-800 bg-gradient-to-b from-zinc-900/80 to-zinc-950/60 backdrop-blur-md px-4 py-3 transition-all hover:border-zinc-700 hover:-translate-y-0.5 active:scale-[0.98]',
+        glow,
+      )}>
+      <div aria-hidden className={cn(
+        'absolute inset-x-0 top-0 h-px bg-gradient-to-r from-amber-400/70 via-emerald-400/70 to-sky-400/70 transition-opacity',
+        alive ? 'opacity-100' : 'opacity-20',
+      )} />
       <div className="flex items-center gap-2 mb-1">
         <Icon className={cn('h-3.5 w-3.5 shrink-0', color)} />
         <p className="text-[10px] font-semibold tracking-wider text-zinc-600 uppercase">{label}</p>
       </div>
-      <p className={cn('text-xl font-black', color)}>{value}</p>
+      <p className={cn('text-xl font-black tabular-nums', color)}>
+        {match ? `${prefix}${animated.toLocaleString('en-US')}${suffix}` : value}
+      </p>
       {sub && <p className="text-[10px] text-zinc-600 mt-0.5">{sub}</p>}
     </Link>
   )
