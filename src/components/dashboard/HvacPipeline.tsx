@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { AlertTriangle, CalendarCheck, CheckCircle2, Copy, FileSearch, FileText, Mail, Phone, PlusCircle, Rocket, Trophy } from 'lucide-react'
 import { useOS } from '@/lib/store'
@@ -90,6 +90,36 @@ function buildProposal(lead: HvacPipelineLead, pkg: ProposalPackage) {
   return `Subject: proposal for ${lead.name}\n\nHey ${lead.name} team,\n\nHere is the plan in plain english.\n\nWHAT I FOUND\n${problems}\n\nWHAT I WOULD BUILD - ${pkg.label}\n${scope}\n\nPRICE\n- Build: $${pkg.build} one-time${monthly}\n- Timeline: ${pkg.days} days after the deposit\n\nNEXT STEP\n$${pkg.deposit} deposit to start. You get the first preview inside a week, and you own everything when it is done.\n\nIf anything here does not fit, tell me straight and I will adjust it.\n\n- Gio\nGR Scale\ngrscales.com`
 }
 
+/** Animates toward `target` with an ease-out curve; counts up from 0 on first mount (same pattern as Scoreboard). */
+function useCountUp(target: number, duration = 700) {
+  const [display, setDisplay] = useState(0)
+  const fromRef = useRef(0)
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    const from = fromRef.current
+    if (from === target) { setDisplay(target); return }
+    const start = performance.now()
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setDisplay(Math.round(from + (target - from) * eased))
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        fromRef.current = target
+      }
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      fromRef.current = target
+    }
+  }, [target, duration])
+
+  return display
+}
+
 function stageRank(stage: HvacPipelineStage) {
   return HVAC_PIPELINE_STAGES.indexOf(stage)
 }
@@ -128,6 +158,8 @@ export default function HvacPipeline() {
   const sendsToday = leads.filter(lead => lead.stage !== 'LIST' && lead.lastTouch === dayKey).length
   const firstCustomerWon = leads.some(lead => stageRank(lead.stage) >= stageRank('DEPOSIT PAID'))
   const followupsDue = leads.filter(lead => ['SENT', 'PROPOSAL SENT'].includes(lead.stage) && isDue(lead.nextTouch))
+  const sendsDisplay = useCountUp(sendsToday)
+  const ringClosed = sendsToday >= 10
 
   useEffect(() => {
     setDayKey(todayIso())
@@ -391,13 +423,32 @@ export default function HvacPipeline() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4">
-          <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4 text-emerald-400" />
-            <p className="text-sm font-black text-white">Send Desk</p>
+        <div className={cn(
+          'relative overflow-hidden rounded-xl border bg-zinc-900/50 p-4 backdrop-blur-md transition-all duration-500',
+          ringClosed ? 'border-emerald-400/50 shadow-lg shadow-emerald-500/25' : sendsToday > 0 ? 'border-emerald-500/40 shadow-lg shadow-emerald-500/15' : 'border-emerald-500/25'
+        )}>
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/70 to-transparent" />
+          <div aria-hidden className={cn(
+            'pointer-events-none absolute -top-16 right-6 h-36 w-36 rounded-full bg-gradient-to-br from-emerald-500/15 to-sky-500/10 blur-2xl transition-opacity duration-700',
+            sendsToday > 0 ? 'opacity-100' : 'opacity-40'
+          )} />
+          <div className="relative flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-emerald-400" />
+              <p className="text-sm font-black text-white">Send Desk</p>
+            </div>
+            <span className={cn(
+              'rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider transition-colors',
+              ringClosed ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-200' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+            )}>
+              {ringClosed ? 'Ring closed' : `${10 - sendsToday} to go`}
+            </span>
           </div>
-          <div className="mt-3 flex items-center gap-4">
-            <div className="relative h-24 w-24 shrink-0">
+          <div className="relative mt-3 flex items-center gap-4">
+            <div className={cn(
+              'relative h-24 w-24 shrink-0 rounded-full transition-shadow duration-500',
+              ringClosed ? 'shadow-[0_0_28px_rgba(52,211,153,0.45)]' : sendsToday > 0 ? 'shadow-[0_0_18px_rgba(16,185,129,0.3)]' : ''
+            )}>
               <svg viewBox="0 0 100 100" className="h-24 w-24 -rotate-90">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(63,63,70,0.55)" strokeWidth="9" />
                 <circle
@@ -413,7 +464,7 @@ export default function HvacPipeline() {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black text-emerald-300">{sendsToday}</span>
+                <span className="text-2xl font-black tabular-nums text-emerald-300">{sendsDisplay}</span>
                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">of 10</span>
               </div>
             </div>
