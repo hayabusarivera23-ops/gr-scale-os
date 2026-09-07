@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   Apple,
@@ -326,6 +326,39 @@ function isPracticeEve() {
   return day === 1 || day === 3 || day === 6
 }
 
+/** Animates toward `target` with an ease-out curve; counts up from 0 on first mount. Premium pass, same pattern as Scoreboard / Send Desk. */
+function useCountUp(target: number, duration = 700) {
+  const [display, setDisplay] = useState(0)
+  const fromRef = useRef(0)
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    const from = fromRef.current
+    if (from === target) {
+      setDisplay(target)
+      return
+    }
+    const start = performance.now()
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setDisplay(Math.round(from + (target - from) * eased))
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        fromRef.current = target
+      }
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      fromRef.current = target
+    }
+  }, [target, duration])
+
+  return display
+}
+
 export default function GioPage() {
   const [view, setView] = useState<View>('Today')
   const [logs, setLogs] = useState<Record<string, DayLog>>({})
@@ -528,6 +561,7 @@ export default function GioPage() {
   const exerciseCalories = log.workoutDone ? 280 : Math.min(180, todaySets.length * 28)
   const remaining = targets.calories - totals.calories + exerciseCalories
   const readyScore = readiness(log, totals.protein, totals.calories, todaySets.length)
+  const readyDisplay = useCountUp(readyScore)
   const coach = coachLine(log, readyScore, totals.protein, totals.calories)
   const readinessNotes = readinessReasons(log, totals.protein, totals.calories)
   const weightDrop = recentWeightDrop(logs, log)
@@ -601,16 +635,29 @@ export default function GioPage() {
         <section className="grid gap-4 py-5 lg:grid-cols-[1.15fr_0.85fr]">
           <button
             onClick={() => switchView('Today')}
-            className="rounded-lg border border-cyan-300/25 bg-white/[0.035] p-5 text-left shadow-2xl shadow-black/20 transition hover:border-cyan-300/50"
+            className="relative overflow-hidden rounded-xl border border-cyan-300/25 bg-zinc-900/50 p-5 text-left shadow-2xl shadow-black/20 backdrop-blur-md transition hover:border-cyan-300/50"
           >
-            <div className="mb-5 flex items-start justify-between gap-4">
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent" />
+            <div
+              aria-hidden
+              className={cn(
+                'pointer-events-none absolute -top-16 right-8 h-40 w-40 rounded-full bg-gradient-to-br from-cyan-400/10 to-emerald-400/10 blur-2xl transition-opacity duration-700',
+                readyScore >= 82 ? 'opacity-100' : 'opacity-60',
+              )}
+            />
+            <div className="relative mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="mb-2 text-xs font-black uppercase tracking-[0.28em] text-cyan-200">Coach brief</p>
                 <h2 className="text-3xl font-black leading-none sm:text-5xl">Do the next rep.</h2>
               </div>
-              <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg border border-emerald-300/35 bg-emerald-300/10">
+              <div
+                className={cn(
+                  'grid h-20 w-20 shrink-0 place-items-center rounded-xl border border-emerald-300/35 bg-emerald-300/10 transition-shadow duration-500',
+                  readyScore >= 82 ? 'shadow-[0_0_28px_rgba(110,231,183,0.45)]' : readyScore >= 65 ? 'shadow-[0_0_16px_rgba(110,231,183,0.22)]' : 'shadow-none',
+                )}
+              >
                 <div className="text-center">
-                  <p className="text-3xl font-black text-emerald-200">{readyScore}</p>
+                  <p className="text-3xl font-black text-emerald-200">{readyDisplay}</p>
                   <p className="text-[10px] font-bold uppercase text-emerald-100/70">ready</p>
                 </div>
               </div>
@@ -1251,13 +1298,20 @@ function QuickAction({
   onClick: () => void
 }) {
   const colors = {
-    cyan: 'text-cyan-200 border-cyan-300/25 hover:border-cyan-300/50',
-    emerald: 'text-emerald-200 border-emerald-300/25 hover:border-emerald-300/50',
-    amber: 'text-amber-200 border-amber-300/25 hover:border-amber-300/50',
-    violet: 'text-violet-200 border-violet-300/25 hover:border-violet-300/50',
+    cyan: 'text-cyan-200 border-cyan-300/25 hover:border-cyan-300/50 shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/20',
+    emerald: 'text-emerald-200 border-emerald-300/25 hover:border-emerald-300/50 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20',
+    amber: 'text-amber-200 border-amber-300/25 hover:border-amber-300/50 shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20',
+    violet: 'text-violet-200 border-violet-300/25 hover:border-violet-300/50 shadow-lg shadow-violet-500/10 hover:shadow-violet-500/20',
+  }
+  const lines = {
+    cyan: 'via-cyan-300/60',
+    emerald: 'via-emerald-300/60',
+    amber: 'via-amber-300/60',
+    violet: 'via-violet-300/60',
   }
   return (
-    <button onClick={onClick} className={cn('rounded-lg border bg-white/[0.035] p-4 text-left transition', colors[accent])}>
+    <button onClick={onClick} className={cn('relative overflow-hidden rounded-xl border bg-zinc-900/50 p-4 text-left backdrop-blur-md transition', colors[accent])}>
+      <div aria-hidden className={cn('pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent', lines[accent])} />
       <Icon className="mb-4 h-5 w-5" />
       <p className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500">{title}</p>
       <p className="mt-1 text-2xl font-black">{value}</p>
