@@ -562,6 +562,7 @@ export default function GioPage() {
   const remaining = targets.calories - totals.calories + exerciseCalories
   const readyScore = readiness(log, totals.protein, totals.calories, todaySets.length)
   const readyDisplay = useCountUp(readyScore)
+  const waterDisplay = useCountUp(log.waterOz)
   const coach = coachLine(log, readyScore, totals.protein, totals.calories)
   const readinessNotes = readinessReasons(log, totals.protein, totals.calories)
   const weightDrop = recentWeightDrop(logs, log)
@@ -729,7 +730,7 @@ export default function GioPage() {
               </button>
             ) : null}
 
-            <Panel>
+            <Panel accent="amber" glow={totals.calories > 0}>
               <div className="mb-4 flex items-center justify-between">
                 <Title icon={Flame} label="Calories remaining" />
                 <button onClick={() => switchView('Eat')} className="rounded-lg bg-white px-3 py-2 text-xs font-black text-black">
@@ -751,7 +752,7 @@ export default function GioPage() {
               ) : null}
             </Panel>
 
-            <Panel>
+            <Panel accent="cyan" glow={log.waterOz > 0}>
               <div className="mb-4 flex items-center justify-between">
                 <Title icon={GlassWater} label="Hydration blocks" />
                 <button onClick={addWater} className="rounded-lg bg-cyan-300 px-3 py-2 text-xs font-black text-black">
@@ -775,10 +776,10 @@ export default function GioPage() {
                   )
                 })}
               </div>
-              <p className="mt-3 text-sm font-semibold text-zinc-300">{log.waterOz} oz logged. Target is about {targets.water} oz, more around practice.</p>
+              <p className="mt-3 text-sm font-semibold text-zinc-300">{waterDisplay} oz logged. Target is about {targets.water} oz, more around practice.</p>
             </Panel>
 
-            <Panel className="lg:col-span-2">
+            <Panel accent="emerald" glow={morningStep > 0} className="lg:col-span-2">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <Title icon={Zap} label="20-second morning flow" />
                 <span className="rounded-lg border border-white/10 px-3 py-2 text-xs font-black text-zinc-400">Step {morningStep + 1}/4</span>
@@ -836,7 +837,7 @@ export default function GioPage() {
               </div>
             </Panel>
 
-            <Panel className="lg:col-span-2">
+            <Panel accent="violet" glow={Boolean(log.weight) || log.workoutDone} className="lg:col-span-2">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <Title icon={Target} label="Tomorrow morning checklist" />
                 <span className="rounded-lg border border-emerald-300/30 px-3 py-2 text-xs font-black text-emerald-200">
@@ -1258,9 +1259,43 @@ export default function GioPage() {
   )
 }
 
-function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
+type PanelAccent = 'cyan' | 'emerald' | 'amber' | 'violet' | 'none'
+
+/** Glass panel: accent hairline on top, soft glow once the card has real data. Premium pass part 5, same language as Scoreboard / Send Desk / Today hero. */
+function Panel({
+  children,
+  className,
+  accent = 'none',
+  glow = false,
+}: {
+  children: React.ReactNode
+  className?: string
+  accent?: PanelAccent
+  glow?: boolean
+}) {
+  const lines: Record<PanelAccent, string> = {
+    cyan: 'via-cyan-300/60',
+    emerald: 'via-emerald-300/60',
+    amber: 'via-amber-300/60',
+    violet: 'via-violet-300/60',
+    none: 'via-white/20',
+  }
+  const glows: Record<PanelAccent, string> = {
+    cyan: 'shadow-[0_0_24px_rgba(103,232,249,0.16)] border-cyan-300/25',
+    emerald: 'shadow-[0_0_24px_rgba(110,231,183,0.16)] border-emerald-300/25',
+    amber: 'shadow-[0_0_24px_rgba(252,211,77,0.16)] border-amber-300/25',
+    violet: 'shadow-[0_0_24px_rgba(196,181,253,0.16)] border-violet-300/25',
+    none: '',
+  }
   return (
-    <div className={cn('rounded-lg border border-white/10 bg-white/[0.035] p-4 shadow-xl shadow-black/15 sm:p-5', className)}>
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-xl border border-white/10 bg-zinc-900/50 p-4 shadow-xl shadow-black/15 backdrop-blur-md transition-shadow duration-500 sm:p-5',
+        glow ? glows[accent] : '',
+        className,
+      )}
+    >
+      <div aria-hidden className={cn('pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent', lines[accent])} />
       {children}
     </div>
   )
