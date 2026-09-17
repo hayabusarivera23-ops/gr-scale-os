@@ -421,6 +421,11 @@ export default function GioPage() {
     writeStore(VIEW_KEY, next)
   }
 
+  function jumpToCheckIn() {
+    switchView('Track')
+    document.getElementById('gio-morning-checkin')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   function saveFood(next: FoodEntry[]) {
     setFood(next)
     writeStore(FOOD_KEY, next)
@@ -738,11 +743,11 @@ export default function GioPage() {
                 </button>
               </div>
               <div className="flex items-center gap-5">
-                <CalorieDial remaining={remaining} consumed={totals.calories} />
+                <CalorieDial remaining={remaining} consumed={totals.calories} onClick={() => switchView('Eat')} />
                 <div className="grid flex-1 gap-3">
-                  <MacroBar label="Protein" value={totals.protein} target={targets.protein} color="bg-emerald-300" />
-                  <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} color="bg-cyan-300" />
-                  <MacroBar label="Fat" value={totals.fat} target={targets.fat} color="bg-amber-300" />
+                  <MacroBar label="Protein" value={totals.protein} target={targets.protein} color="bg-emerald-300" onClick={() => switchView('Eat')} />
+                  <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} color="bg-cyan-300" onClick={() => switchView('Eat')} />
+                  <MacroBar label="Fat" value={totals.fat} target={targets.fat} color="bg-amber-300" onClick={() => switchView('Eat')} />
                 </div>
               </div>
               {remaining > 900 ? (
@@ -1151,6 +1156,7 @@ export default function GioPage() {
         {view === 'Track' ? (
           <section className="grid gap-4 py-5 lg:grid-cols-[0.9fr_1.1fr]">
             <Panel>
+              <div id="gio-morning-checkin" className="scroll-mt-24" />
               <Title icon={Scale} label="Morning check-in" />
               <div className="mt-4 grid gap-3">
                 <MorningField label="Weight" suffix="lb" value={log.weight} onChange={(value) => updateLog({ weight: value })} />
@@ -1200,20 +1206,20 @@ export default function GioPage() {
                 })}
               </div>
               <div className="mt-4 grid gap-2 sm:grid-cols-4">
-                <MiniStat icon={Scale} label="Weight" value={selectedLog.weight ? `${selectedLog.weight} lb` : 'No log'} />
-                <MiniStat icon={Moon} label="Sleep" value={`${selectedLog.sleep}/10`} />
-                <MiniStat icon={Activity} label="Energy" value={`${selectedLog.energy}/10`} />
-                <MiniStat icon={HeartPulse} label="Sore" value={`${selectedLog.soreness}/10`} />
+                <MiniStat icon={Scale} label="Weight" value={selectedLog.weight ? `${selectedLog.weight} lb` : 'No log'} onClick={jumpToCheckIn} />
+                <MiniStat icon={Moon} label="Sleep" value={`${selectedLog.sleep}/10`} onClick={jumpToCheckIn} />
+                <MiniStat icon={Activity} label="Energy" value={`${selectedLog.energy}/10`} onClick={jumpToCheckIn} />
+                <MiniStat icon={HeartPulse} label="Sore" value={`${selectedLog.soreness}/10`} onClick={jumpToCheckIn} />
               </div>
             </Panel>
 
             <Panel className="lg:col-span-2">
               <Title icon={CheckCircle2} label="Growth log" />
               <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                <MiniStat icon={Utensils} label="Food entries" value={String(todayFood.length)} />
-                <MiniStat icon={Dumbbell} label="Sets" value={String(todaySets.length)} />
-                <MiniStat icon={GlassWater} label="Water" value={`${log.waterOz} oz`} />
-                <MiniStat icon={Trophy} label="Streak" value={`${log.streak} days`} />
+                <MiniStat icon={Utensils} label="Food entries" value={String(todayFood.length)} onClick={() => switchView('Eat')} />
+                <MiniStat icon={Dumbbell} label="Sets" value={String(todaySets.length)} onClick={() => switchView('Train')} />
+                <MiniStat icon={GlassWater} label="Water" value={`${log.waterOz} oz`} onClick={() => switchView('Today')} />
+                <MiniStat icon={Trophy} label="Streak" value={`${log.streak} days`} onClick={() => switchView('Today')} />
               </div>
             </Panel>
           </section>
@@ -1354,10 +1360,10 @@ function QuickAction({
   )
 }
 
-function CalorieDial({ remaining, consumed }: { remaining: number; consumed: number }) {
+function CalorieDial({ remaining, consumed, onClick }: { remaining: number; consumed: number; onClick?: () => void }) {
   const progress = percent(consumed, targets.calories)
   return (
-    <button className="relative grid h-40 w-40 shrink-0 place-items-center rounded-lg border border-white/10 bg-black/40">
+    <button type="button" onClick={onClick} className="relative grid h-40 w-40 shrink-0 place-items-center rounded-lg border border-white/10 bg-black/40 transition hover:border-cyan-300/30 active:scale-[0.98]">
       <div
         className="absolute inset-3 rounded-lg"
         style={{
@@ -1374,9 +1380,9 @@ function CalorieDial({ remaining, consumed }: { remaining: number; consumed: num
   )
 }
 
-function MacroBar({ label, value, target, color }: { label: string; value: number; target: number; color: string }) {
+function MacroBar({ label, value, target, color, onClick }: { label: string; value: number; target: number; color: string; onClick?: () => void }) {
   return (
-    <button className="w-full text-left">
+    <button type="button" onClick={onClick} className="w-full text-left transition hover:opacity-90 active:scale-[0.99]">
       <div className="mb-1 flex justify-between text-xs font-black uppercase tracking-wider text-zinc-400">
         <span>{label}</span>
         <span>{value}/{target}g</span>
@@ -1419,9 +1425,9 @@ function SliderField({ label, value, min, max, onChange }: { label: string; valu
   )
 }
 
-function MiniStat({ icon: Icon, label, value }: { icon: typeof Target; label: string; value: string }) {
+function MiniStat({ icon: Icon, label, value, onClick }: { icon: typeof Target; label: string; value: string; onClick?: () => void }) {
   return (
-    <button className="rounded-lg border border-white/10 bg-black/30 p-3 text-left">
+    <button type="button" onClick={onClick} className="rounded-lg border border-white/10 bg-black/30 p-3 text-left transition hover:border-cyan-300/30 active:scale-[0.98]">
       <Icon className="mb-3 h-4 w-4 text-cyan-200" />
       <p className="text-xs font-black uppercase tracking-widest text-zinc-500">{label}</p>
       <p className="mt-1 text-lg font-black">{value}</p>
