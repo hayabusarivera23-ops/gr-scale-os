@@ -404,10 +404,10 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-3 gap-2">
             {(['starter', 'growth', 'scale'] as const).map(id => (
-              <div key={id} className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-center">
+              <Link key={id} href="/proposals" className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-center transition-all hover:border-emerald-500/40 hover:bg-emerald-500/5">
                 <p className="text-sm font-bold text-zinc-300">{PACKAGES[id].name}</p>
                 <p className="text-[10px] text-zinc-600">{PACKAGES[id].monthlyLabel}</p>
-              </div>
+              </Link>
             ))}
           </div>
           <p className="text-xs text-zinc-700">One Starter close = {formatCurrency(99 * 12)}/yr. Ten = {formatCurrency(99 * 12 * 10)}/yr recurring.</p>
