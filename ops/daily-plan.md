@@ -1,9 +1,9 @@
-# 2026-11-21
+# 2026-11-22
 
-Saturday: mat work + core. 10 min warm-up, 20 min drilling (shots, finishes, stand-ups), 3-4 rounds of 3 min live or hard shadow wrestling, then core: plank 3x45s, leg raises 3x12, Russian twists 3x20. Go lighter if you're still beat from Thursday practice.
+Sunday: rest day. No lifting. Do 10 min mobility this morning (hips, hamstrings, shoulders), then practice 2-4p. After practice: 5 min stretch and lay out gear for Monday lower body.
 
-Food: eggs + toast, chicken and rice, PB&J + milk snack, beef and pasta dinner, Greek yogurt before bed. About 3,000 cal, 150g protein, creatine 5g.
+Food: eggs + oatmeal + banana breakfast, chicken/rice/veggies lunch, PB sandwich + milk + fruit 1 hr before practice, protein shake right after, beef or chicken + potatoes dinner, Greek yogurt before bed. About 3,000 cal and 150g protein. Creatine 5g.
 
-Weigh in after waking (hold 144-148) and drink a full gallon of water.
+Weigh in this morning after the bathroom, before eating. Finish your gallon of water, sip extra during practice.
 
 Reply with how you slept / feel / what you did — I'll adjust and remember.
