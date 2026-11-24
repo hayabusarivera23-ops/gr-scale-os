@@ -1,9 +1,9 @@
-# 2026-11-23
+# 2026-11-24
 
-Monday = lower body. Squats 4x6, RDLs 3x8, walking lunges 3x10 each leg, calf raises 3x15, plank 3x45s. Legs heavy from Sunday practice? Drop one squat set and leave 2 reps in the tank.
+Tuesday: skill + mobility. AM: 20 min mobility (hips, hamstrings, shoulders) + 15 min shadow drilling (stance, motion, shots). Keep it light, legs are coming off Monday's lower day. Practice 6-8p.
 
-Food: eggs + oatmeal breakfast, chicken + rice lunch, PB&J + milk after school, meat + potatoes + veggies dinner, Greek yogurt before bed. About 3,000 cal, 150g protein, creatine 5g.
+Food (~3,000 cal / 150g protein): eggs + oatmeal breakfast, chicken + rice lunch, PB sandwich + banana at 4:30 before practice, meat + rice or pasta after practice, Greek yogurt or milk before bed. Creatine 5g.
 
-Weigh in this morning after the bathroom (target 144-148) and finish a full gallon of water.
+Weigh in this morning after the bathroom, and get through a gallon of water by practice.
 
 Reply with how you slept / feel / what you did — I'll adjust and remember.
