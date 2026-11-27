@@ -1,9 +1,9 @@
-# 2026-11-25
+# 2026-11-27
 
-Wednesday = upper body: bench 4x6, rows 4x8, overhead press 3x8, pull-ups 3x max, curls + face pulls 2x12. Leave 1-2 reps in the tank.
+Fri: power day. Day after Thanksgiving, so keep it crisp, not long. 10 min warm-up, hang cleans 4x3, box jumps 4x4, push press 3x5, med ball slams 3x8, 6x20 yd sprints, 5 min stretch. End each set while it's still fast.
 
-Food: eggs + oatmeal breakfast, chicken and rice lunch, PB sandwich + Greek yogurt snack, meat + potatoes + veggies dinner, milk with meals, creatine 5g (~3,000 cal / 150g protein). Tomorrow is Thanksgiving: eat a normal breakfast, don't skip meals to "save room."
+Food: eggs + oatmeal + milk, leftover turkey + rice or potatoes, PB sandwich + banana snack, chicken + rice + veggies dinner, Greek yogurt or milk before bed. ~3,000 cal, 150g protein, creatine 5g.
 
-Weigh in this morning and log it. Full gallon of water by tonight.
+Weigh in after bathroom, before breakfast. Up 1-2 lb from yesterday's meal is normal water, don't react to it. Finish the water gallon.
 
 Reply with how you slept / feel / what you did — I'll adjust and remember.
