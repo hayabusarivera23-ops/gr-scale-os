@@ -1,9 +1,6 @@
-# 2026-11-27
+# 2026-11-28
 
-Fri: power day. Day after Thanksgiving, so keep it crisp, not long. 10 min warm-up, hang cleans 4x3, box jumps 4x4, push press 3x5, med ball slams 3x8, 6x20 yd sprints, 5 min stretch. End each set while it's still fast.
-
-Food: eggs + oatmeal + milk, leftover turkey + rice or potatoes, PB sandwich + banana snack, chicken + rice + veggies dinner, Greek yogurt or milk before bed. ~3,000 cal, 150g protein, creatine 5g.
-
-Weigh in after bathroom, before breakfast. Up 1-2 lb from yesterday's meal is normal water, don't react to it. Finish the water gallon.
-
+Saturday = mat work + core. 10 min warm-up (jog, hips, shoulders), 20 min drilling (shots, sprawls, stand-ups), 3-4 rounds of 3 min live or hard shadow wrestling, then core: plank 3x45s, leg raises 3x12, Russian twists 3x20. Legs heavy from Friday power? Cut live rounds to 2 and drill sharp instead.
+Food: eggs + oatmeal, chicken/rice lunch, PB sandwich + banana snack, turkey leftovers or beef + potatoes dinner, milk/shake before bed — ~3,000 cal, 150g protein, creatine 5g.
+Weigh in this morning and log it. Finish a full gallon of water.
 Reply with how you slept / feel / what you did — I'll adjust and remember.
